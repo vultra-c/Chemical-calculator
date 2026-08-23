@@ -1,0 +1,9 @@
+<script>
+/**
+ * 应用入口：纯离线化学计算工具，无任何网络请求。
+ */
+export default {
+  onCreate() {},
+  onDestroy() {}
+}
+</script>

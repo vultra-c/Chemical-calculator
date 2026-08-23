@@ -1,0 +1,27 @@
+{
+  "package": "com.velachem.calculator",
+  "name": "化学反应计算器",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "minPlatformVersion": 1200,
+  "icon": "/common/icon.png",
+  "simulationVersion": "default",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    { "name": "system.router" }
+  ],
+  "config": {
+    "logLevel": "log",
+    "designWidth": 466
+  },
+  "router": {
+    "entry": "pages/index",
+    "pages": {
+      "pages/index": { "component": "index" },
+      "pages/calc": { "component": "calc" },
+      "pages/elements": { "component": "elements" }
+    }
+  }
+}

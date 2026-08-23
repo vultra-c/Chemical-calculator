@@ -1,0 +1,137 @@
+<template>
+  <div class="page">
+    <scroll class="scroll" scroll-y="true">
+      <div class="inner">
+        <div class="header">
+          <text class="back" onclick="goBack">‹</text>
+          <text class="h-title">元素数据查询</text>
+        </div>
+
+        <input class="ipt" type="text" placeholder="搜索：符号 / 名称 / 序号" value="{{keyword}}" onchange="onSearch"></input>
+        <text class="count">{{list.length}} 种元素 · 数据离线内置</text>
+
+        <div class="card row" for="(idx, e) in list">
+          <text class="z">{{e.z}}</text>
+          <text class="sym">{{e.symbol}}</text>
+          <div class="mid">
+            <text class="name">{{e.name}}</text>
+            <text class="mass-t">相对原子质量</text>
+          </div>
+          <text class="mass">{{e.mass}}</text>
+        </div>
+      </div>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import { ELEMENTS } from '../../common/chemistry/elements.js'
+
+export default {
+  data: () => ({
+    keyword: '',
+    list: ELEMENTS
+  }),
+  goBack() {
+    router.back()
+  },
+  onSearch(evt) {
+    const k = String(evt.value || '').trim().toLowerCase()
+    this.keyword = evt.value
+    if (!k) {
+      this.list = ELEMENTS
+      return
+    }
+    this.list = ELEMENTS.filter(function (e) {
+      return (
+        e.symbol.toLowerCase().indexOf(k) >= 0 ||
+        e.name.indexOf(k) >= 0 ||
+        String(e.z) === k ||
+        String(e.mass).indexOf(k) === 0
+      )
+    })
+  }
+}
+</script>
+
+<style>
+.page {
+  background-color: #0b0f14;
+}
+.scroll {
+  flex-grow: 1;
+}
+.inner {
+  flex-direction: column;
+  padding: 60px 44px 70px 44px;
+}
+.header {
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 26px;
+}
+.back {
+  color: #8a97a5;
+  font-size: 44px;
+  padding-right: 24px;
+}
+.h-title {
+  color: #f2f6f8;
+  font-size: 32px;
+  font-weight: bold;
+}
+.ipt {
+  background-color: #151b23;
+  border-radius: 16px;
+  color: #f2f6f8;
+  font-size: 25px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+.count {
+  color: #55606c;
+  font-size: 19px;
+  margin-bottom: 18px;
+}
+.card {
+  background-color: #151b23;
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  flex-direction: row;
+  align-items: center;
+}
+.row {
+  flex-direction: row;
+}
+.z {
+  color: #55606c;
+  font-size: 20px;
+  width: 44px;
+}
+.sym {
+  color: #34d399;
+  font-size: 34px;
+  font-weight: bold;
+  width: 96px;
+}
+.mid {
+  flex-direction: column;
+  flex-grow: 1;
+}
+.name {
+  color: #f2f6f8;
+  font-size: 26px;
+}
+.mass-t {
+  color: #77828e;
+  font-size: 17px;
+  margin-top: 4px;
+}
+.mass {
+  color: #fbbf24;
+  font-size: 27px;
+  font-weight: bold;
+}
+</style>

@@ -1,0 +1,125 @@
+<template>
+  <div class="page">
+    <div class="hero">
+      <image class="logo" src="/icon.png"></image>
+      <text class="title">化学反应计算器</text>
+      <text class="subtitle">纯离线 · 推导产物 · 智能配平 · 质量计算</text>
+    </div>
+
+    <div class="menu">
+      <div class="card menu-card primary" onclick="goCalc">
+        <div class="dot dot-teal"></div>
+        <div class="menu-text">
+          <text class="menu-title">反应计算</text>
+          <text class="menu-desc">输入反应物，自动推导配平</text>
+        </div>
+        <text class="arrow">›</text>
+      </div>
+
+      <div class="card menu-card" onclick="goElements">
+        <div class="dot dot-amber"></div>
+        <div class="menu-text">
+          <text class="menu-title">元素数据</text>
+          <text class="menu-desc">相对原子质量离线查询</text>
+        </div>
+        <text class="arrow">›</text>
+      </div>
+    </div>
+
+    <text class="foot">支持化学式 / 中文名称 · 数据全程本地计算</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+
+export default {
+  goCalc() {
+    router.push({ uri: 'pages/calc' })
+  },
+  goElements() {
+    router.push({ uri: 'pages/elements' })
+  }
+}
+</script>
+
+<style>
+.page {
+  flex-direction: column;
+  background-color: #0b0f14;
+  padding: 90px 56px 40px 56px;
+  align-items: center;
+}
+.hero {
+  align-items: center;
+}
+.logo {
+  width: 132px;
+  height: 132px;
+  border-radius: 30px;
+}
+.title {
+  color: #f2f6f8;
+  font-size: 40px;
+  font-weight: bold;
+  margin-top: 22px;
+}
+.subtitle {
+  color: #8a97a5;
+  font-size: 21px;
+  margin-top: 10px;
+}
+.menu {
+  margin-top: 52px;
+  width: 100%;
+}
+.card {
+  background-color: #151b23;
+  border-radius: 24px;
+}
+.menu-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 26px 28px;
+  margin-bottom: 24px;
+}
+.primary {
+  border: 1px solid rgba(52, 211, 153, 0.45);
+}
+.dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  margin-right: 24px;
+}
+.dot-teal {
+  background-color: #34d399;
+}
+.dot-amber {
+  background-color: #fbbf24;
+}
+.menu-text {
+  flex-direction: column;
+  flex-grow: 1;
+}
+.menu-title {
+  color: #f2f6f8;
+  font-size: 29px;
+  font-weight: bold;
+}
+.menu-desc {
+  color: #8a97a5;
+  font-size: 20px;
+  margin-top: 6px;
+}
+.arrow {
+  color: #4a5561;
+  font-size: 36px;
+}
+.foot {
+  color: #55606c;
+  font-size: 19px;
+  margin-top: 18px;
+  text-align: center;
+}
+</style>
