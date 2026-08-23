@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
     <scroll class="scroll" scroll-y="true">
       <div class="inner">
         <div class="header">
@@ -29,12 +29,37 @@ import router from '@system.router'
 import { ELEMENTS } from '../../common/chemistry/elements.js'
 
 export default {
-  data: () => ({
-    keyword: '',
-    list: ELEMENTS
-  }),
+  data: function () {
+    return {
+      keyword: '',
+      list: ELEMENTS,
+      touchStartX: 0,
+      touchStartY: 0,
+      touchStartTime: 0
+    }
+  },
   goBack() {
     router.back()
+  },
+  onTouchStart(evt) {
+    const t = evt.changedTouches && evt.changedTouches[0]
+    if (!t) return
+    this.touchStartX = t.clientX != null ? t.clientX : t.pageX
+    this.touchStartY = t.clientY != null ? t.clientY : t.pageY
+    this.touchStartTime = Date.now()
+  },
+  onTouchEnd(evt) {
+    const t = evt.changedTouches && evt.changedTouches[0]
+    if (!t || !this.touchStartTime) return
+    const endX = t.clientX != null ? t.clientX : t.pageX
+    const endY = t.clientY != null ? t.clientY : t.pageY
+    const dx = endX - this.touchStartX
+    const dy = endY - this.touchStartY
+    const dt = Date.now() - this.touchStartTime
+    this.touchStartTime = 0
+    if (dx > 90 && Math.abs(dy) < 70 && dt < 800) {
+      router.back()
+    }
   },
   onSearch(evt) {
     const k = String(evt.value || '').trim().toLowerCase()
@@ -57,6 +82,7 @@ export default {
 
 <style>
 .page {
+  flex-direction: column;
   background-color: #0b0f14;
 }
 .scroll {
@@ -64,12 +90,12 @@ export default {
 }
 .inner {
   flex-direction: column;
-  padding: 60px 44px 70px 44px;
+  padding: 48px 40px 64px 40px;
 }
 .header {
   flex-direction: row;
   align-items: center;
-  margin-bottom: 26px;
+  margin-bottom: 24px;
 }
 .back {
   color: #8a97a5;
@@ -101,6 +127,7 @@ export default {
   margin-bottom: 14px;
   flex-direction: row;
   align-items: center;
+  width: 100%;
 }
 .row {
   flex-direction: row;

@@ -10,7 +10,8 @@
     "watch"
   ],
   "features": [
-    { "name": "system.router" }
+    { "name": "system.router" },
+    { "name": "system.app" }
   ],
   "config": {
     "logLevel": "log",

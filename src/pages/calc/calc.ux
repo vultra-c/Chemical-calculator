@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
     <scroll class="scroll" scroll-y="true">
       <div class="inner">
         <div class="header">
@@ -77,19 +77,44 @@ import { splitReactants } from '../../common/chemistry/parser.js'
 import { analyzeList, calcStoich } from '../../common/chemistry/reactions.js'
 
 export default {
-  data: () => ({
-    inputText: '',
-    result: null,
-    eqLeftStr: '',
-    eqRightStr: '',
-    errorMsg: '',
-    selIdx: 0,
-    massText: '',
-    massRows: [],
-    massMsg: ''
-  }),
+  data: function () {
+    return {
+      inputText: '',
+      result: null,
+      eqLeftStr: '',
+      eqRightStr: '',
+      errorMsg: '',
+      selIdx: 0,
+      massText: '',
+      massRows: [],
+      massMsg: '',
+      touchStartX: 0,
+      touchStartY: 0,
+      touchStartTime: 0
+    }
+  },
   goBack() {
     router.back()
+  },
+  onTouchStart(evt) {
+    const t = evt.changedTouches && evt.changedTouches[0]
+    if (!t) return
+    this.touchStartX = t.clientX != null ? t.clientX : t.pageX
+    this.touchStartY = t.clientY != null ? t.clientY : t.pageY
+    this.touchStartTime = Date.now()
+  },
+  onTouchEnd(evt) {
+    const t = evt.changedTouches && evt.changedTouches[0]
+    if (!t || !this.touchStartTime) return
+    const endX = t.clientX != null ? t.clientX : t.pageX
+    const endY = t.clientY != null ? t.clientY : t.pageY
+    const dx = endX - this.touchStartX
+    const dy = endY - this.touchStartY
+    const dt = Date.now() - this.touchStartTime
+    this.touchStartTime = 0
+    if (dx > 90 && Math.abs(dy) < 70 && dt < 800) {
+      router.back()
+    }
   },
   onInput(evt) {
     this.inputText = evt.value
@@ -183,6 +208,7 @@ export default {
 
 <style>
 .page {
+  flex-direction: column;
   background-color: #0b0f14;
 }
 .scroll {
@@ -190,12 +216,12 @@ export default {
 }
 .inner {
   flex-direction: column;
-  padding: 60px 44px 70px 44px;
+  padding: 48px 40px 64px 40px;
 }
 .header {
   flex-direction: row;
   align-items: center;
-  margin-bottom: 26px;
+  margin-bottom: 24px;
 }
 .back {
   color: #8a97a5;
@@ -217,12 +243,13 @@ export default {
 }
 .card {
   background-color: #151b23;
-  border-radius: 24px;
+  border-radius: 22px;
 }
 .block {
   flex-direction: column;
-  padding: 26px;
-  margin-bottom: 24px;
+  padding: 24px;
+  margin-bottom: 22px;
+  width: 100%;
 }
 .label {
   color: #8a97a5;
@@ -241,6 +268,7 @@ export default {
   flex-direction: row;
   flex-wrap: wrap;
   margin-bottom: 16px;
+  width: 100%;
 }
 .chip {
   background-color: #0e1319;
@@ -257,11 +285,14 @@ export default {
   border: 1px solid rgba(52, 211, 153, 0.55);
 }
 .btn-main {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background-image: linear-gradient(90deg, #10b981, #34d399);
   border-radius: 18px;
-  align-items: center;
   padding: 20px;
   margin-top: 4px;
+  width: 100%;
 }
 .btn-main-t {
   color: #04231a;
@@ -269,11 +300,14 @@ export default {
   font-weight: bold;
 }
 .btn-sub {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background-color: rgba(52, 211, 153, 0.14);
   border-radius: 18px;
-  align-items: center;
   padding: 18px;
   margin-top: 4px;
+  width: 100%;
 }
 .btn-sub-t {
   color: #34d399;
@@ -291,7 +325,9 @@ export default {
 }
 .row-badges {
   flex-direction: row;
+  align-items: center;
   margin-bottom: 18px;
+  width: 100%;
 }
 .badge {
   font-size: 19px;
@@ -320,6 +356,7 @@ export default {
   flex-direction: row;
   align-items: center;
   margin: 10px 0;
+  width: 100%;
 }
 .arrow-line {
   flex-grow: 1;
