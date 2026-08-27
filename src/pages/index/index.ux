@@ -1,36 +1,28 @@
+<!--
+  化学工具箱 · 主页（336×480）
+  闪念小抄 UI 风格：hd.png 顶栏 + 双行居中标题 + 112px 大圆角功能卡片列表。
+  右滑 / 返回键退出应用。
+-->
 <template>
-  <div class="page" ontouchstart="onTouchStart" ontouchend="onTouchEnd">
-    <div class="header">
-      <image class="logo" src="/icon.png"></image>
-      <div class="header-text">
-        <text class="title">化学反应计算器</text>
-        <text class="subtitle">纯离线 · 配平 · 质量计算</text>
-      </div>
-    </div>
+  <div class="page" @swipe="onSwipe">
 
-    <div class="menu">
-      <div class="card menu-card primary" onclick="goCalc">
-        <div class="dot dot-teal"></div>
-        <div class="menu-text">
-          <text class="menu-title">反应计算</text>
-          <text class="menu-desc">输入反应物，自动推导配平</text>
+    <!-- 功能卡片列表（分块无需，4 项一次渲染） -->
+    <list class="list" id="menuList">
+      <list-item for="{{menu}}" tid="id" class="item" type="menu" @click="go($item)">
+        <div class="item-content">
+          <text class="itemtext">{{$item.title}}</text>
+          <text class="itemtext2">{{$item.sub}}</text>
         </div>
-        <text class="arrow">›</text>
-      </div>
+        <img static src="/common/images/enter.png" class="arrow" />
+      </list-item>
+    </list>
 
-      <div class="card menu-card" onclick="goElements">
-        <div class="dot dot-amber"></div>
-        <div class="menu-text">
-          <text class="menu-title">元素数据</text>
-          <text class="menu-desc">相对原子质量离线查询</text>
-        </div>
-        <text class="arrow">›</text>
-      </div>
-    </div>
+    <!-- 顶栏（闪念小抄同款：底图 + 返回 + 双行居中标题） -->
+    <img static src="/common/images/hd.png" class="hd-bg" />
+    <img static src="/common/images/back.png" class="hd-back" @click="exitApp" />
+    <text static class="hd-sub">离线化学计算</text>
+    <text static class="hd-title">化学工具箱</text>
 
-    <div class="spacer"></div>
-    <text class="foot" if="{{navError}}">{{navError}}</text>
-    <text class="foot">支持化学式 / 中文名称 · 右滑退出</text>
   </div>
 </template>
 
@@ -39,144 +31,35 @@ import router from '@system.router'
 import app from '@system.app'
 
 export default {
-  data: function () {
-    return {
-      navError: '',
-      touchStartX: 0,
-      touchStartY: 0,
-      touchStartTime: 0
+  private: {
+    menu: [
+      { id: 'm1', uri: 'pages/reaction', title: '反应计算', sub: '输入反应物，自动推导并配平' },
+      { id: 'm2', uri: 'pages/element', title: '元素查询', sub: '按元素或名称查找方程式' },
+      { id: 'm3', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
+      { id: 'm4', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' }
+    ]
+  },
+
+  go(item) {
+    if (item && item.uri) {
+      router.push({ uri: item.uri })
     }
   },
-  goCalc() {
-    this.nav('pages/calc')
+  exitApp() {
+    app.terminate()
   },
-  goElements() {
-    this.nav('pages/elements')
-  },
-  nav(path) {
-    try {
-      router.push({ uri: '/' + path })
-    } catch (e) {
-      this.navError = '跳转失败: ' + e.message
+  onSwipe(e) {
+    if (e && e.direction === 'right') {
+      app.terminate()
     }
   },
-  onTouchStart(evt) {
-    const t = evt.changedTouches && evt.changedTouches[0]
-    if (!t) return
-    this.touchStartX = t.clientX != null ? t.clientX : t.pageX
-    this.touchStartY = t.clientY != null ? t.clientY : t.pageY
-    this.touchStartTime = Date.now()
-  },
-  onTouchEnd(evt) {
-    const t = evt.changedTouches && evt.changedTouches[0]
-    if (!t || !this.touchStartTime) return
-    const endX = t.clientX != null ? t.clientX : t.pageX
-    const endY = t.clientY != null ? t.clientY : t.pageY
-    const dx = endX - this.touchStartX
-    const dy = endY - this.touchStartY
-    const dt = Date.now() - this.touchStartTime
-    this.touchStartTime = 0
-    // 右滑：水平位移足够大、基本水平、时间较短
-    if (dx > 90 && Math.abs(dy) < 70 && dt < 800) {
-      try {
-        app.terminate()
-      } catch (e) {
-        this.navError = '退出失败: ' + e.message
-      }
-    }
+  onBackPress() {
+    app.terminate()
+    return true
   }
 }
 </script>
 
 <style>
-.page {
-  flex-direction: column;
-  background-color: #0b0f14;
-  padding: 56px 44px 40px 44px;
-}
-.header {
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 44px;
-}
-.logo {
-  width: 88px;
-  height: 88px;
-  border-radius: 20px;
-  margin-right: 22px;
-  flex-shrink: 0;
-}
-.header-text {
-  flex-direction: column;
-  flex-grow: 1;
-}
-.title {
-  color: #f2f6f8;
-  font-size: 33px;
-  font-weight: bold;
-}
-.subtitle {
-  color: #8a97a5;
-  font-size: 19px;
-  margin-top: 8px;
-}
-.menu {
-  flex-direction: column;
-  width: 100%;
-}
-.card {
-  background-color: #151b23;
-  border-radius: 22px;
-}
-.menu-card {
-  flex-direction: row;
-  align-items: center;
-  padding: 24px 26px;
-  margin-bottom: 22px;
-  width: 100%;
-}
-.primary {
-  border: 1px solid rgba(52, 211, 153, 0.45);
-}
-.dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 11px;
-  margin-right: 22px;
-  flex-shrink: 0;
-}
-.dot-teal {
-  background-color: #34d399;
-}
-.dot-amber {
-  background-color: #fbbf24;
-}
-.menu-text {
-  flex-direction: column;
-  flex-grow: 1;
-}
-.menu-title {
-  color: #f2f6f8;
-  font-size: 28px;
-  font-weight: bold;
-}
-.menu-desc {
-  color: #8a97a5;
-  font-size: 19px;
-  margin-top: 6px;
-}
-.arrow {
-  color: #4a5561;
-  font-size: 34px;
-  flex-shrink: 0;
-}
-.spacer {
-  flex-grow: 1;
-}
-.foot {
-  color: #55606c;
-  font-size: 18px;
-  text-align: center;
-  margin-top: 10px;
-}
+@import '../../common/style.css';
 </style>

@@ -1,75 +1,79 @@
 # 化学反应计算器（小米 Vela 轻应用）
 
-纯离线运行的化学反应计算工具，适配小米 Vela 穿戴设备（手表 / 手环）。所有计算、数据与反应库均在本地完成，**无任何联网请求**。
+纯离线运行的化学反应计算工具，适配小米 Vela 穿戴设备。所有计算、元素数据、反应规则库均本地内置，无需联网。
+
+- 包名：`com.whyy.chemcalc`
+- 当前版本：`V26.8.29.CALC`（versionCode 2608290）
+- 设计尺寸：336 × 480（designWidth 336，与考点阅读器一致）
 
 ## 功能
 
-1. **反应物输入识别**：支持标准化学式（`Fe`、`CuSO4·5H2O`）与物质中文名称（`铁`、`胆矾`、`熟石灰` 等 150+ 词条），多种物质用 `+` 分隔；自动过滤非法字符，无法识别时明确提示。
-2. **全自动生成物推导**：内置经典反应库 + 规则推理（燃烧、还原、置换、中和、复分解、化合、分解等），自动生成全部产物；无法发生的组合会给出原因，绝不乱配。
-3. **智能配平**：BigInt 精确分数 + 高斯消元求零空间，输出最简整数系数。
-4. **双向质量计量**：任选方程式中一种物质输入已知质量（克），自动计算其余所有物质的摩尔数与质量（正向 / 反向均可）。
-5. **元素数据离线查询**：68 种常见元素的相对原子质量（IUPAC 标准值）本地可查，支持符号 / 名称 / 序号搜索。
-6. **一键重置**：随时清空输入与结果，无限次反复计算。
+1. **反应物输入识别**：支持标准化学式（`HCl+NaOH`、`Cu2(OH)2CO3`）与物质中文名称（`盐酸+烧碱`），两种方式可混用，`+` 分隔。自动过滤非法字符并给出明确错误提示。
+2. **全自动生成物推导**：内置反应规则引擎，覆盖化合、分解、置换、复分解（含中和）、氧化还原、有机燃烧等常规反应；无法反应时给出原因提示，不乱生成。
+3. **智能配平**：分数制高斯消元求质量守恒零空间，输出最小正整数计量系数。
+4. **双向质量计量**：任选方程式中一种物质输入已知质量，按配平比例正向/反向推算其余所有物质的质量与物质的量。
+5. **离线元素数据库**：36 种常用元素的 standard 相对原子质量 + 金属活动性顺序 + 常见离子化合价 + 溶解性表。
+6. **一键重置**：清空按钮随时重新输入，无限次计算。
 
-## 工程结构
+## 页面结构
+
+| 路由 | 说明 |
+|------|------|
+| `pages/index` | 输入页：考点阅读器同款输入法（中文/日文/英文）与物质名称目录双模式 |
+| `pages/result` | 方程式页：带下标渲染的配平方程式、反应类型、条件、各物质相对分子质量 |
+| `pages/mass` | 质量计算页：选择已知物质 → 数字键盘输入质量 → 批量推算结果 |
+
+所有页面支持右滑退出（`@swipe right → router.back()`），操作逻辑与考点阅读器一致。
+
+## 目录
 
 ```
+化学计算器/
+├── package.json            # aiot-toolkit 构建配置
+├── src/components/InputMethod/  # 考点阅读器同款中文/日文/英文输入法
+├── scripts/patch-aiotpack.js
+├── sign/
+│   ├── release/            # 发布签名 private.pem + certificate.pem（已推送仓库）
+│   └── debug/
 ├── src/
-│   ├── manifest.json          # 应用配置（3 页面路由）
-│   ├── app.ux                 # 入口
-│   ├── icon.png               # 应用图标
-│   ├── pages/
-│   │   ├── index.ux           # 首页
-│   │   ├── calc.ux            # 反应计算页
-│   │   └── elements.ux        # 元素查询页
-│   └── common/chemistry/      # 纯 JS 化学引擎（零依赖，可独立测试）
-│       ├── elements.js        # 相对原子质量库
-│       ├── substances.js      # 中文名称词典
-│       ├── parser.js          # 化学式解析器（含结晶水合物）
-│       ├── balance.js         # 精确配平算法
-│       └── reactions.js       # 反应规则推导 + 计量计算
-├── tests/chemistry.test.mjs   # 32 个单元测试
-└── tools/gen-icon.mjs         # 零依赖图标生成器
+│   ├── manifest.json
+│   ├── app.ux
+│   ├── common/
+│   │   ├── style.css       # 主题（纯黑底 + 深灰圆角卡片 + #0D6EFF 蓝强调）
+│   │   ├── images/icon.png # 应用图标（锥形瓶）
+│   │   └── logic/          # 核心算法（纯 JS，可独立测试）
+│   │       ├── elements.js     # 元素/活动性/离子/溶解性数据
+│   │       ├── parser.js       # 化学式解析与名称解析
+│   │       ├── balance.js      # 配平算法
+│   │       ├── reactions.js    # 反应规则引擎
+│   │       └── stoich.js       # 计量计算
+│   ├── components/FormulaText/  # 下标渲染组件
+│   └── pages/{index,result,mass}/
+├── tests/smoke.mjs         # Node 冒烟测试（62 项断言）
+└── ../release/             # 根目录统一存放的签名发布包 *.rpk
 ```
 
-## 构建为 .rpk
-
-### 云端 / 本地命令行构建（已验证可用）
+## 构建与签名
 
 ```bash
-npm install       # 安装工具链（aiot-toolkit 2.0.5）
-npm run build     # 构建 debug 包 → dist/com.velachem.calculator.debug.1.0.0.rpk
-npm test          # 同步运行化学引擎单元测试
+# 安装依赖（如独立环境）
+npm install
+
+# 构建 + 使用 sign/release 签名，产物在 dist/
+npm run release          # 即 aiot release --enable-jsc
+
+# 运行核心逻辑测试
+node tests/smoke.mjs
 ```
 
-debug 包使用工具链内置调试证书，可直接通过 AIoT-IDE「安装调试包」或 adb 侧载到 Vela 设备测试。
-
-### 发布包（release）
+签名证书由本仓库自带生成（RSA 2048，CN=com.whyy.chemcalc，有效期 30 年）。若需更换：
 
 ```bash
-npm run release   # 需要正式签名证书，放入 sign/release/
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out sign/release/private.pem
+openssl req -new -x509 -key sign/release/private.pem -out sign/release/certificate.pem \
+  -days 10950 -subj "/CN=com.whyy.chemcalc/O=WenHuaYiYang/C=CN"
 ```
 
-上架应用商店必须使用与开发者小米账号绑定的正式证书（见 `sign/release/README.txt`）；
-若涉及手表与手机 App 通信，两端证书须一致。
+## 与考点阅读器的关系
 
-也可以直接用 [AIoT-IDE](https://iot.mi.com/vela/quickapp/zh/) 打开本目录进行模拟器预览与构建。
-
-设计基准：圆屏 466×466（`config.designWidth: 466`），深色 OLED 友好配色。
-
-## 测试化学引擎
-
-无需任何依赖：
-
-```bash
-npm test
-# 或 node --test tests/chemistry.test.mjs
-```
-
-覆盖解析、词典、配平、20+ 类反应推导与计量计算的 32 个断言。
-
-## 说明
-
-- 原子量采用 IUPAC 精确值（如 Fe=55.845），结果与教材取整值（Fe=56）可能有 <1% 的正常差异。
-- K/Ca/Na 与酸、盐溶液的反应按教材规范给出「不适用」说明而非强行配平。
-- 暂不支持三种及以上反应物组合推导。
+两个项目源码完全独立分目录存放（`考点阅读器/` 与 `化学计算器/`），互不影响；仅共用同一套视觉风格与交互习惯。构建工具链相同（aiot-toolkit），开发环境可通过软链共享 `node_modules`。
