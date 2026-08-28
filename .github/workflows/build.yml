@@ -5,6 +5,9 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,9 +32,35 @@ jobs:
     - name: Build release RPK
       run: npm run release
 
+    # 安装时「没有包名」的防护闸门：
+    # 校验包内 manifest 可解析出包名、且包含 RPK Sig Block 42 签名块
+    - name: Verify RPK (package name + signature)
+      run: node scripts/verify-rpk.mjs dist/*.rpk
+
     - name: Upload RPK artifact
       uses: actions/upload-artifact@v4
       with:
         name: chemcalc-release-rpk
         path: dist/*.rpk
         retention-days: 30
+
+    # artifact 下载下来是 zip 包装，直接安装会显示「没有包名」。
+    # 原始 .rpk 以 Release asset 形式发布，下载即为可直接安装的文件，
+    # 固定下载地址: releases/latest/download/<包名>.release.<版本>.rpk
+    - name: Publish raw RPK to GitHub Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        RPK=$(ls dist/*.rpk | head -n1)
+        VER=$(node -p "require('./src/manifest.json').versionName")
+        TAG="v$(node -p "require('./src/manifest.json').versionCode")"
+        if gh release view "$TAG" >/dev/null 2>&1; then
+          gh release upload "$TAG" "$RPK" --clobber
+          gh release edit "$TAG" --latest
+        else
+          gh release create "$TAG" "$RPK" \
+            --title "化学工具箱 $VER" \
+            --notes "Action 自动构建的原始 RPK 安装包，可直接安装。勿使用 Artifacts 里的 zip(那是打包下载容器,直接装会显示没有包名)。" \
+            --latest
+        fi

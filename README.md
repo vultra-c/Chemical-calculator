@@ -62,9 +62,17 @@ npm install
 # 构建 + 使用 sign/release 签名，产物在 dist/
 npm run release          # 即 aiot release --enable-jsc
 
+# 校验产物（包名可解析 + 含签名块）
+node scripts/verify-rpk.mjs dist/*.rpk
+
 # 运行核心逻辑测试
 node tests/smoke.mjs
 ```
+
+## 安装（务必使用原始 .rpk）
+
+- **从 Releases 下载** `*.rpk` 文件直接安装（Action 每次构建会自动发布到最新 Release）。
+- **不要**直接安装 Artifacts 下载的文件：artifact 是 zip 容器（里面才包着 .rpk），把它当 RPK 安装会显示「没有包名」。若从 Artifacts 获取，请先解压取出其中的 `.rpk` 再安装。
 
 签名证书由本仓库自带生成（RSA 2048，CN=com.whyy.chemcalc，有效期 30 年）。若需更换：
 
