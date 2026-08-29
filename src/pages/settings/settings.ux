@@ -1,8 +1,10 @@
 <!--
   化学工具箱 · 设置中心（336×480，闪念小抄/弦电子书同款风格）
   主页右上角 more 进入；列表结构与主页菜单一致（.list/.item/.arrow +
-  padding-top 102 全屏铺底），3 项不滚动，无需渐变遮罩。
-  「结果小数位」点击循环 1→2→3 并写回 storage；常量显示/关于跳转子页。
+  padding-top 102 全屏铺底）。
+  「结果小数位」点击循环 1→2→3；「常亮显示/按键振动」点击开关并立即生效；
+  常亮记忆：storage 持久化 + app.ux onCreate / 主页 onShow 重新应用。
+  5 行可滚动，按滚动页规范叠 top_fade 渐变遮罩。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
@@ -17,10 +19,13 @@
       </list-item>
     </list>
 
+    <!-- 顶部渐变遮罩（可滚动列表） -->
+    <img static src="/common/images/top_fade.png" class="top-fade" />
+
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
-    <text static class="hd-sub">偏好与常量</text>
+    <text static class="hd-sub">偏好与常亮</text>
     <text static class="hd-title">设置</text>
 
   </div>
@@ -29,24 +34,28 @@
 <script>
 import router from '@system.router'
 import prompt from '@system.prompt'
-import { loadSettings, saveSettings } from '../../common/logic/settings.js'
+import { loadSettings, saveSettings, applyKeepScreenOn } from '../../common/logic/settings.js'
 
 export default {
   private: {
     menu: [
       { id: 'precision', title: '结果小数位', sub: '当前 3 位' },
+      { id: 'keepscreen', title: '常亮显示', sub: '已关闭' },
+      { id: 'vibrate', title: '按键振动', sub: '已开启' },
       { id: 'constants', uri: 'pages/constants', title: '常量显示', sub: '常用化学常数速查' },
       { id: 'about', uri: 'pages/about', title: '关于', sub: '版本 · 包名 · 数据说明' }
     ]
   },
 
-  onInit() { this.refreshPrecision() },
-  onShow() { this.refreshPrecision() },
+  onInit() { this.refreshAll() },
+  onShow() { this.refreshAll() },
 
-  refreshPrecision() {
+  refreshAll() {
     loadSettings((s) => {
       const next = this.menu.slice()
       next[0] = Object.assign({}, next[0], { sub: '当前 ' + s.precision + ' 位' })
+      next[1] = Object.assign({}, next[1], { sub: s.keepScreenOn ? '已开启 · 注意耗电' : '已关闭' })
+      next[2] = Object.assign({}, next[2], { sub: s.vibrate !== false ? '已开启' : '已关闭' })
       this.menu = next
     })
   },
@@ -54,6 +63,8 @@ export default {
   go(item) {
     if (!item) return
     if (item.id === 'precision') { this.cyclePrecision(); return }
+    if (item.id === 'keepscreen') { this.toggleKeepScreen(); return }
+    if (item.id === 'vibrate') { this.toggleVibrate(); return }
     if (item.uri) router.push({ uri: item.uri })
   },
 
@@ -61,8 +72,31 @@ export default {
     loadSettings((s) => {
       const next = s.precision >= 3 ? 1 : s.precision + 1
       saveSettings({ precision: next }, () => {
-        this.refreshPrecision()
+        this.refreshAll()
         prompt.showToast({ message: '结果保留 ' + next + ' 位小数', duration: 900 })
+      })
+    })
+  },
+
+  toggleKeepScreen() {
+    loadSettings((s) => {
+      const next = !s.keepScreenOn
+      applyKeepScreenOn(next, (ok, msg) => {
+        if (!ok) { prompt.showToast({ message: msg || '设置失败', duration: 1500 }); return }
+        saveSettings({ keepScreenOn: next }, () => {
+          this.refreshAll()
+          prompt.showToast({ message: next ? '常亮已开启（本应用内）' : '常亮已关闭', duration: 1200 })
+        })
+      })
+    })
+  },
+
+  toggleVibrate() {
+    loadSettings((s) => {
+      const next = s.vibrate === false
+      saveSettings({ vibrate: next }, () => {
+        this.refreshAll()
+        prompt.showToast({ message: next ? '按键振动已开启' : '按键振动已关闭', duration: 900 })
       })
     })
   },

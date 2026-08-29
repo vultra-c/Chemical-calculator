@@ -2,11 +2,13 @@
   化学工具箱 · 主页（336×480）
   闪念小抄 UI 风格：hd.png 顶栏 + 双行居中标题 + 112px 大圆角功能卡片列表。
   右滑 / 返回键退出应用。
+  5 个功能项可滚动，按滚动页规范叠 top_fade 渐变遮罩；
+  onShow 时按持久化设置恢复常亮（app.ux onCreate 之外的双保险）。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
 
-    <!-- 功能卡片列表（分块无需，4 项一次渲染） -->
+    <!-- 功能卡片列表（5 项，可滚动） -->
     <list class="list" id="menuList">
       <list-item for="{{menu}}" tid="id" class="item" type="menu" @click="go($item)">
         <div class="item-content">
@@ -16,6 +18,9 @@
         <img static src="/common/images/enter.png" class="arrow" />
       </list-item>
     </list>
+
+    <!-- 顶部渐变遮罩（可滚动列表） -->
+    <img static src="/common/images/top_fade.png" class="top-fade" />
 
     <!-- 顶栏（闪念小抄同款：底图 + 返回 + 双行居中标题；右上角 more 进设置） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
@@ -30,15 +35,23 @@
 <script>
 import router from '@system.router'
 import app from '@system.app'
+import { loadSettings, applyKeepScreenOn } from '../../common/logic/settings.js'
 
 export default {
   private: {
     menu: [
       { id: 'm1', uri: 'pages/reaction', title: '反应计算', sub: '输入反应物，自动推导并配平' },
       { id: 'm2', uri: 'pages/element', title: '元素查询', sub: '按元素或名称查找方程式' },
-      { id: 'm3', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
-      { id: 'm4', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' }
+      { id: 'm3', uri: 'pages/synth', title: '合成查询', sub: '输入产物，逆推需要的反应物' },
+      { id: 'm4', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
+      { id: 'm5', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' }
     ]
+  },
+
+  onShow() {
+    loadSettings((s) => {
+      if (s.keepScreenOn) applyKeepScreenOn(true)
+    })
   },
 
   go(item) {

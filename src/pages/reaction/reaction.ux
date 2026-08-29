@@ -37,7 +37,7 @@
 
     <!-- 共享输入法 -->
     <input-method hide="{{!showKb}}" keyboardtype="QWERTY" screentype="rect" maxlength="8"
-      vibratemode="short" @complete="onInput" @delete="onDel"></input-method>
+      vibratemode="{{vibrateMode}}" @complete="onInput" @delete="onDel"></input-method>
   </div>
 </template>
 
@@ -47,11 +47,19 @@ import prompt from '@system.prompt'
 import { splitInputTokens, resolveToken } from '../../common/logic/parser.js'
 import { solveReaction } from '../../common/logic/reactions.js'
 import { NAME_MAP } from '../../common/logic/substances.js'
+import { loadSettings } from '../../common/logic/settings.js'
 
 export default {
   private: {
     inputStr: '',
-    showKb: false
+    showKb: false,
+    vibrateMode: 'short'
+  },
+
+  onInit() {
+    loadSettings((s) => {
+      this.vibrateMode = s.vibrate === false ? '' : 'short'
+    })
   },
 
   onShow() {

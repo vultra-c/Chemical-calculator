@@ -201,6 +201,46 @@ T('计量 Zn+HCl 已知锌求氢气', () => {
   assert(Math.abs(out[3].mass - 2.016) / 2.016 < 0.001, 'H2 应约 2.016，实际 ' + out[3].mass)
 })
 
+// ---- 产物逆推（合成查询） ----
+import { findProducers, findCompletions } from '../src/common/logic/reverseQuery.js'
+T('逆推 H2O：含 2H2+O2 且反应物少优先', () => {
+  const hits = findProducers('H2O', 50)
+  assert(hits.length > 0, '应有合成水的反应')
+  const idx = hits.findIndex(e => e.r.join('+') === 'H2+O2')
+  assert(idx >= 0, '应含氢气+氧气化合')
+  for (let i = 1; i < hits.length; i++) {
+    assert(hits[i - 1].r.length <= hits[i].r.length, '应按反应物个数升序')
+  }
+})
+T('逆推 Fe3O4：含 3Fe+2O2', () => {
+  const hits = findProducers('Fe3O4', 50)
+  assert(hits.some(e => e.r.indexOf('Fe') >= 0 && e.r.indexOf('O2') >= 0))
+})
+T('逆推不存在的产物为空', () => {
+  assert.equal(findProducers('Xx9Yy9', 50).length, 0)
+})
+T('逆推 CO2 已知 C：缺 O2', () => {
+  const comps = findCompletions('CO2', ['C'], 50)
+  assert(comps.length > 0)
+  const top = comps[0]
+  assert.deepEqual(top.missing, ['O2'])
+  assert.equal(top.entry.t, '化合反应')
+})
+T('逆推 H2O 已知 O2：缺 H2 且不漏已知物', () => {
+  const comps = findCompletions('H2O', ['O2'], 50)
+  assert(comps.length > 0)
+  // 已知 O2 绝不会再出现在缺失列表；氢气化合路径缺失恰为 H2
+  assert(comps.every(c => c.missing.indexOf('O2') < 0))
+  assert(comps.some(c => c.missing.join('+') === 'H2'))
+})
+T('逆推 已知反应物未参与则无结果', () => {
+  assert.equal(findCompletions('Fe3O4', ['Cu'], 50).length, 0)
+})
+T('逆推 已知多个反应物全匹配才命中', () => {
+  const comps = findCompletions('H2O', ['H2', 'O2'], 50)
+  assert(comps.length === 1 && comps[0].missing.length === 0)
+})
+
 // ---- 化学专属输入词库（gen_chem_dict.py 生成；防回归） ----
 const { SimpleInputMethod } = await import('../src/components/InputMethod/assets/dicUtil.js')
 const { getWords } = await import('../src/components/InputMethod/assets/dic_words.js')

@@ -14,9 +14,12 @@
  * 不得依赖本模块（Node 环境没有 @system.*）。
  */
 import storage from '@system.storage'
+import brightness from '@system.brightness'
+import app from '@system.app'
 
 const KEY = 'chem_settings'
-const DEF = { precision: 3 }
+// keepScreenOn 常亮显示（应用内保屏）；vibrate 键盘振动反馈
+const DEF = { precision: 3, keepScreenOn: false, vibrate: true }
 let cache = null
 
 export function loadSettings(cb) {
@@ -47,6 +50,33 @@ export function saveSettings(next, cb) {
 
 export function getPrecision() {
   return (cache && cache.precision) || DEF.precision
+}
+
+export function getKeepScreenOn() {
+  return cache ? !!cache.keepScreenOn : DEF.keepScreenOn
+}
+
+export function getVibrate() {
+  return cache ? cache.vibrate !== false : DEF.vibrate
+}
+
+/**
+ * 应用常亮设置（立即生效）。洛汐文档规约：先 canIUse 探能力再调接口，
+ * 不支持/失败时回调 false 并带原因，调用方据此提示，不靠异常绕过。
+ * 注意：快应用 setKeepScreenOn 仅约束本应用前台期间，退出后系统自动恢复，
+ * 「记忆」靠应用启动时按持久化设置重新应用（见 app.ux onCreate）。
+ */
+export function applyKeepScreenOn(on, cb) {
+  let usable = true
+  try {
+    usable = !!(app.canIUse && app.canIUse('@system.brightness.setKeepScreenOn'))
+  } catch (e) { usable = true }
+  if (!usable) { cb && cb(false, '当前设备不支持常亮设置'); return }
+  brightness.setKeepScreenOn({
+    keepScreenOn: !!on,
+    success: () => cb && cb(true),
+    fail: () => cb && cb(false, '常亮设置失败')
+  })
 }
 
 /** 按当前精度格式化展示数值（未加载完成时先用默认 3 位，与旧 fmtNum 输出一致） */

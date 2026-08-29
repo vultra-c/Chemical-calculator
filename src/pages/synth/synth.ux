@@ -1,17 +1,17 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <!--
-  化学工具箱 · 元素查询页（336×480，闪念小抄风格）
-  输入一个或多个元素（Fe O / 铁 氧 / 氧气 铁），
-  本地检索同时含这些元素的方程式；支持中文名与英文符号混输。
-  输入卡与「查询方程」按钮位于键盘遮挡区之上；结果区全部 absolute 顶层挂载。
+  化学工具箱 · 合成查询页（336×480，闪念小抄风格）
+  逆推查询：输入产物（水 / H2O），列出所有能合成它的反应；
+  再空格加一种已知反应物（水 氢气），即可求出还缺的反应物。
+  输入卡与「逆推」按钮位于键盘遮挡区之上；结果区全部 absolute 顶层挂载。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
 
     <!-- 输入卡（小抄深色大圆角卡片） -->
     <div class="input-card" @click="toggleKb">
-      <text if="{{inputStr.length == 0}}" class="input-ph">输入元素或名称，空格分隔：Fe O / 铁 氧</text>
+      <text if="{{inputStr.length == 0}}" class="input-ph">输入产物，空格分隔：水 / 水 氢气</text>
       <div if="{{inputStr.length > 0}}" class="value-row">
         <text class="input-value">{{inputStr}}</text>
         <text if="{{showKb}}" class="input-caret">_</text>
@@ -23,15 +23,15 @@
       <text class="btn-ghost-t">清空</text>
     </div>
     <div class="btn-main btn-search" @click="onSearch">
-      <text class="btn-main-t">查询方程</text>
+      <text class="btn-main-t">逆推</text>
     </div>
 
-    <!-- 结果区（小抄风格深色面板 + 80px 结果卡片；全部 absolute 顶层挂载） -->
+    <!-- 结果区（小抄风格深色面板 + 结果卡片；全部 absolute 顶层挂载） -->
     <div show="{{searched}}" class="panel-bg"></div>
-    <text show="{{searched}}" class="panel-hd-t">匹配方程式</text>
-    <text show="{{searched}}" class="panel-hd-n">{{elementResults.length}} 条</text>
-    <text show="{{searched && elementResults.length == 0}}" class="panel-none">没有同时含这些元素的方程式</text>
-    <list show="{{searched && elementResults.length > 0}}" class="eq-list" onscrollbottom="onReachBottom">
+    <text show="{{searched}}" class="panel-hd-t">合成路径</text>
+    <text show="{{searched}}" class="panel-hd-n">{{synthResults.length}} 条</text>
+    <text show="{{searched && synthResults.length == 0}}" class="panel-none">{{noneMsg}}</text>
+    <list show="{{searched && synthResults.length > 0}}" class="eq-list" onscrollbottom="onReachBottom">
       <list-item for="{{visibleResults}}" tid="rid" type="eq" class="eq-item" @click="openEquation($item)">
         <div class="eq-content">
           <text class="eq-item-text">{{$item.text}}</text>
@@ -40,20 +40,20 @@
       </list-item>
       <list-item if="{{hasMoreRes}}" type="more" class="eq-more" @click="onReachBottom">
         <div class="eq-more-content">
-          <text class="more-text">▼ 还有 {{elementResults.length - visibleResults.length}} 条，上滑加载</text>
+          <text class="more-text">▼ 还有 {{synthResults.length - visibleResults.length}} 条，上滑加载</text>
         </div>
       </list-item>
     </list>
-    <text if="{{!searched}}" class="panel-idle">点击输入框输入，如：Fe O 或 铁 氧</text>
+    <text if="{{!searched}}" class="panel-idle">如：水（查全部合成）或 水 氢气（求缺的反应物）</text>
 
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
-    <text static class="hd-sub">按元素检索</text>
-    <text static class="hd-title">元素查询</text>
+    <text static class="hd-sub">按产物逆推</text>
+    <text static class="hd-title">合成查询</text>
 
     <!-- 共享输入法 -->
-    <input-method hide="{{!showKb}}" keyboardtype="QWERTY" screentype="rect" maxlength="8"
+    <input-method hide="{{!showKb}}" keyboardtype="QWERTY" screentype="rect" maxlength="12"
       vibratemode="{{vibrateMode}}" @complete="onInput" @delete="onDel"></input-method>
   </div>
 </template>
@@ -61,11 +61,14 @@
 <script>
 import router from '@system.router'
 import prompt from '@system.prompt'
-import { parseElementQuery, searchEquations, buildReactionFromBank, equationText } from '../../common/logic/elementQuery.js'
+import { resolveToken } from '../../common/logic/parser.js'
 import { NAME_MAP } from '../../common/logic/substances.js'
+import { findProducers, findCompletions } from '../../common/logic/reverseQuery.js'
+import { buildReactionFromBank, equationText } from '../../common/logic/elementQuery.js'
+import { formulaToText } from '../../common/logic/fmt.js'
 import { loadSettings } from '../../common/logic/settings.js'
 
-// 分块渲染：首屏 15 条，滚动到底追加 15 条（Vela 文档：长列表应分页避免首屏卡顿）
+// 分块渲染：首屏 15 条，滚动到底追加 15 条
 const RES_CHUNK = 15
 
 export default {
@@ -73,7 +76,8 @@ export default {
     inputStr: '',
     showKb: false,
     searched: false,
-    elementResults: [],
+    noneMsg: '',
+    synthResults: [],
     visibleResults: [],
     renderPos: 0,
     hasMoreRes: false,
@@ -95,13 +99,8 @@ export default {
     const ch = String(e.detail.content || '')
     if (!ch || this.inputStr.length >= 40) return
 
-    // 中文名称：直接追加（铁、氧气、碳酸钙 …）
+    // 中文名称：直接追加（水、氢气、碳酸钙 …）
     if (/[\u4e00-\u9fa5]/.test(ch)) {
-      this.inputStr += ch
-      return
-    }
-    // 字母/数字：原样追加
-    if (/^[A-Za-z0-9]$/.test(ch)) {
       this.inputStr += ch
       return
     }
@@ -110,8 +109,19 @@ export default {
       if (this.inputStr && this.inputStr.slice(-1) !== ' ') this.inputStr += ' '
       return
     }
-    // 其他符号按分隔处理
-    if (this.inputStr && this.inputStr.slice(-1) !== ' ') this.inputStr += ' '
+    // 字母：token 段首（空格、(、[ 后）或数字后自动补大写
+    if (/^[A-Za-z]$/.test(ch)) {
+      const seg = this.inputStr.split(/[ +()[\]\u4e00-\u9fa5]/).pop() || ''
+      const needUpper = seg === '' || /[0-9]$/.test(seg)
+      const lower = ch.toLowerCase()
+      const upper = ch.toUpperCase()
+      this.inputStr += (needUpper && ch === lower) ? upper : ch
+      return
+    }
+    // 数字、括号
+    if (/^[0-9()[\]]$/.test(ch)) {
+      this.inputStr += ch
+    }
   },
 
   onDel() {
@@ -124,47 +134,70 @@ export default {
     this.inputStr = ''
     this.showKb = false
     this.searched = false
-    this.elementResults = []
+    this.synthResults = []
     this.visibleResults = []
     this.renderPos = 0
     this.hasMoreRes = false
   },
 
   onReachBottom() {
-    if (!this.hasMoreRes || !this.elementResults.length) return
-    const end = Math.min(this.renderPos + RES_CHUNK, this.elementResults.length)
-    this.visibleResults = this.visibleResults.concat(this.elementResults.slice(this.renderPos, end))
+    if (!this.hasMoreRes || !this.synthResults.length) return
+    const end = Math.min(this.renderPos + RES_CHUNK, this.synthResults.length)
+    this.visibleResults = this.visibleResults.concat(this.synthResults.slice(this.renderPos, end))
     this.renderPos = end
-    this.hasMoreRes = this.renderPos < this.elementResults.length
+    this.hasMoreRes = this.renderPos < this.synthResults.length
   },
 
   onSearch() {
     this.showKb = false
-    let query = null
-    try {
-      query = parseElementQuery(this.inputStr, NAME_MAP)
-    } catch (err) {
-      prompt.showToast({ message: '查询出错', duration: 2000 })
-      return
+    const tokens = this.inputStr.trim().split(/\s+/).filter(t => t.length > 0)
+    if (!tokens.length) { prompt.showToast({ message: '请先输入产物', duration: 1500 }); return }
+    if (tokens.length > 2) { prompt.showToast({ message: '最多输入：产物 + 1 种反应物', duration: 1800 }); return }
+
+    // 第一个 token = 产物；第二个 = 已知反应物（可选）
+    const product = resolveToken(tokens[0], NAME_MAP)
+    if (!product.ok) { prompt.showToast({ message: product.error, duration: 2200 }); return }
+    let known = null
+    if (tokens.length === 2) {
+      known = resolveToken(tokens[1], NAME_MAP)
+      if (!known.ok) { prompt.showToast({ message: known.error, duration: 2200 }); return }
     }
-    if (!query.ok) { prompt.showToast({ message: query.error, duration: 2000 }); return }
 
     let hits = []
     try {
-      hits = searchEquations(query.elems, 50)
+      if (known) {
+        const comps = findCompletions(product.formula, [known.formula], 50)
+        // 行文案：方程式 + 类型 · 还需 X（反应物已凑齐则标注）
+        hits = comps.map((c, i) => {
+          const missText = c.missing.map(m => formulaToText(m)).join('、')
+          return {
+            text: equationText(c.entry),
+            type: c.missing.length ? c.entry.t + ' · 还需 ' + missText : c.entry.t + ' · 反应物已齐',
+            entry: c.entry,
+            rid: 'c' + i
+          }
+        })
+        this.noneMsg = '没有同时使用该反应物的合成路径'
+      } else {
+        const rows = findProducers(product.formula, 50)
+        hits = rows.map((e, i) => ({
+          text: equationText(e),
+          type: e.t,
+          entry: e,
+          rid: 'p' + i
+        }))
+        this.noneMsg = '没有能合成该物质的反应'
+      }
     } catch (err) {
       hits = []
     }
-    const rows = []
-    for (let i = 0; i < hits.length; i++) {
-      rows.push({ text: equationText(hits[i]), type: hits[i].t, entry: hits[i], rid: 'e' + i })
-    }
-    this.elementResults = rows
-    this.visibleResults = rows.slice(0, RES_CHUNK)
-    this.renderPos = Math.min(RES_CHUNK, rows.length)
-    this.hasMoreRes = rows.length > RES_CHUNK
+
+    this.synthResults = hits
+    this.visibleResults = hits.slice(0, RES_CHUNK)
+    this.renderPos = Math.min(RES_CHUNK, hits.length)
+    this.hasMoreRes = hits.length > RES_CHUNK
     this.searched = true
-    if (rows.length === 0) prompt.showToast({ message: '未找到匹配方程式', duration: 1800 })
+    if (hits.length === 0) prompt.showToast({ message: '未找到合成路径', duration: 1800 })
   },
 
   openEquation(item) {
@@ -253,7 +286,7 @@ export default {
   font-size: 26px;
 }
 
-/* ---- 结果区（小抄深色面板 + 结果卡片；absolute 顶层挂载，list 不参与 flex 测量） ---- */
+/* ---- 结果区（小抄深色面板 + 结果卡片；absolute 顶层挂载） ---- */
 .panel-bg {
   position: absolute;
   left: 6px;
@@ -300,7 +333,6 @@ export default {
   height: 166px;
   padding: 0px 12px;
 }
-/* list-item：小抄搜索结果风（80px 卡片）；静态 class + 显式行高，内容 div 包裹 */
 .eq-item {
   width: 100%;
   height: 62px;
@@ -329,6 +361,8 @@ export default {
   line-height: 20px;
   color: #4da3ff;
   margin-top: 1px;
+  lines: 1;
+  text-overflow: ellipsis;
 }
 .eq-more {
   width: 100%;
