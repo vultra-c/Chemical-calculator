@@ -61,6 +61,17 @@
   text-overflow: ellipsis;
 }
 
+/* ---- 滚动页顶部渐变遮罩（全屏铺底列表专用） ----
+ * 叠在 list 之后、顶栏元素之前：滑动时内容在顶栏下沿渐隐，不生硬截断。
+ * 用法：<img static src="/common/images/top_fade.png" class="top-fade" /> */
+.top-fade {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 336px;
+  height: 101px;
+}
+
 /* ---- 闪念小抄同款列表与卡片 ---- */
 .list {
   position: absolute;

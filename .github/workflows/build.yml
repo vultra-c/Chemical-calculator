@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Smoke test (67 cases)
+    - name: Smoke test
       run: node tests/smoke.mjs
 
     - name: Build release RPK

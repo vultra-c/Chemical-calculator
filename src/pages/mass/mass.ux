@@ -65,7 +65,7 @@
 import router from '@system.router'
 import prompt from '@system.prompt'
 import { computeMasses } from '../../common/logic/stoich.js'
-import { fmtNum } from '../../common/logic/parser.js'
+import { loadSettings, fmtOut } from '../../common/logic/settings.js'
 import { segsToText } from '../../common/logic/fmt.js'
 
 export default {
@@ -99,6 +99,10 @@ export default {
     try {
       this.$app.$def.massKnownIdx = this.knownIdx
     } catch (err) {}
+    // 精度设置可能已被更改，异步就绪后按最新精度重排已有结果（幂等）
+    loadSettings(() => {
+      if (this.hasResult) this.buildResultRows()
+    })
   },
 
   onSelect(item) {
@@ -141,14 +145,21 @@ export default {
     }
     if (!out) { prompt.showToast({ message: '计算失败', duration: 1500 }); return }
 
+    this._out = out
+    this.buildResultRows()
+  },
+
+  buildResultRows() {
+    const out = this._out
+    if (!out) return
     const r = this._rxn
     const rows = []
     for (let i = 0; i < out.length; i++) {
       const isKnown = i === this.knownIdx
       rows.push({
         text: (isKnown ? '● ' : '') + segsToText(r.segs[i], r.coefs[i]),
-        massText: fmtNum(out[i].mass),
-        molText: 'n ≈ ' + fmtNum(out[i].mol) + ' mol' + (isKnown ? ' · 已知' : ''),
+        massText: fmtOut(out[i].mass),
+        molText: 'n ≈ ' + fmtOut(out[i].mol) + ' mol' + (isKnown ? ' · 已知' : ''),
         known: isKnown,
         rid: 'q' + i
       })

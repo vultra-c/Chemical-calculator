@@ -17,9 +17,10 @@
       </list-item>
     </list>
 
-    <!-- 顶栏（闪念小抄同款：底图 + 返回 + 双行居中标题） -->
+    <!-- 顶栏（闪念小抄同款：底图 + 返回 + 双行居中标题；右上角 more 进设置） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="exitApp" />
+    <img static src="/common/images/more.png" class="hd-more" @click="goSettings" />
     <text static class="hd-sub">离线化学计算</text>
     <text static class="hd-title">化学工具箱</text>
 
@@ -44,6 +45,9 @@ export default {
     if (item && item.uri) {
       router.push({ uri: item.uri })
     }
+  },
+  goSettings() {
+    router.push({ uri: 'pages/settings' })
   },
   exitApp() {
     app.terminate()

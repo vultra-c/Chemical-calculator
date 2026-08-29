@@ -45,3 +45,13 @@ This file records user instructions, preferences, and teachings for reference in
   - 本项目分发渠道: Action 自动发布到 GitHub Release(tag 为 v{versionCode}),原始 rpk 为 release asset,直链 releases/latest/download/ 可下载
   - 本地/CI 可用 node scripts/verify-rpk.mjs <rpk> 校验:包名可解析 + 含 RPK Sig Block 42 签名块
   - 用户后续会提供正式签名文件替换 sign/release/,替换后重新触发构建即可,verify 脚本与证书无关、可继续用作闸门
+
+[Vela 快应用真机坑: list-item 上 for 与 if 不得同用]
+- Date: 2026-08-29
+- Context: Discovered by Agent while 修复 catalog 页整列无内容(真机截图:只剩「还有 N 条」加载项)
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - Vela 的 list-item 同时写 for 和 if 时,if 不会按条目求值,真机会整列不渲染(本地构建无任何报错,只能真机发现)
+  - 正确模式: 同页单 type 单 list-item,DOM 结构完全一致,行内差异用三元动态 class 表达(class="{{$item.kind === 'x' ? 'a' : 'b'}}"),该方法已在 catalog/mass 真机验证
+  - 同类 CSS 限制: 不支持后代选择器(.a .b),构建期告警「Selector type unsupport Descendant Selector」,样式静默失效
+  - 完整 UI 规范已固化在仓库根目录 VELA_UI_SKILL.md,新页面开发先读它

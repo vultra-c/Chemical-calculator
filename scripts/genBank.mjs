@@ -19,14 +19,17 @@ const SALTS = [
 ]
 const REDUCIBLE = ['CuO','Fe2O3','Fe3O4','ZnO','MgO','Al2O3','PbO']
 const NONMETALS = ['C','S','P','H2','N2','O2','Cl2','Si']
-const ORGANICS = ['CH4','C2H5OH','CH3OH','C2H2','C6H12O6','CH3COOH','C12H22O11']
+const ORGANICS = ['CH4','C2H5OH','CH3OH','C2H2','C2H4','C3H8','C6H12O6','CH3COOH','C12H22O11']
 const WATER = ['H2O']
 
 const combos = []
 const add = (arr) => combos.push(arr)
 
 // 单质分解
-for (const m of ['CaCO3','H2O','H2O2','KMnO4','KClO3','Cu2(OH)2CO3','NH4HCO3','NaHCO3','Ca(HCO3)2','H2CO3','HgO','Al2O3','Fe(OH)3','Mg(OH)2','Cu(OH)2','NH4Cl']) add([m])
+for (const m of ['CaCO3','H2O','H2O2','KMnO4','KClO3','Cu2(OH)2CO3','NH4HCO3','NaHCO3','Ca(HCO3)2','H2CO3','HgO','Al2O3','Fe(OH)3','Mg(OH)2','Cu(OH)2','NH4Cl','MgCO3','ZnCO3','KNO3','NaNO3','HNO3']) add([m])
+
+// 高中经典氧化还原特殊反应
+add(['NO','O2']); add(['SO2','O2']); add(['NH3','O2']); add(['H2O','NO2']); add(['HCl','MnO2'])
 
 // 金属 + 氧气
 for (const m of METALS) add([m, 'O2'])
@@ -88,7 +91,7 @@ add(['Fe','H2O']); add(['Na2O2','H2O']); add(['Na2O2','CO2'])
 for (const o of ORGANICS) add([o, 'O2'])
 
 // 三元
-add(['CO2','H2O','CaCO3']); add(['CO2','H2O','Ca(OH)2']); add(['CO2','NaOH','Ca(OH)2'])
+add(['CO2','H2O','CaCO3']); add(['CO2','H2O','Na2CO3']); add(['CO2','H2O','Ca(OH)2']); add(['CO2','NaOH','Ca(OH)2'])
 
 // ---- 执行 ----
 const seen = new Set()

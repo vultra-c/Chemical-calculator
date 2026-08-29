@@ -60,6 +60,7 @@ export const NAME_MAP = {
   '甲烷': 'CH4', '天然气主要成分': 'CH4', '沼气主要成分': 'CH4',
   '乙醇': 'C2H5OH', '酒精': 'C2H5OH',
   '甲醇': 'CH3OH', '乙炔': 'C2H2',
+  '乙烯': 'C2H4', '丙烷': 'C3H8', '液化石油气主要成分': 'C3H8',
   '葡萄糖': 'C6H12O6', '蔗糖': 'C12H22O11', '醋酸': 'CH3COOH'
 }
 
@@ -97,7 +98,7 @@ export const CATALOG = [
   },
   {
     group: '有机物',
-    items: ['CH4', 'C2H5OH', 'CH3OH', 'C2H2', 'C6H12O6', 'C12H22O11', 'CH3COOH']
+    items: ['CH4', 'C2H5OH', 'CH3OH', 'C2H2', 'C2H4', 'C3H8', 'C6H12O6', 'C12H22O11', 'CH3COOH']
   }
 ]
 

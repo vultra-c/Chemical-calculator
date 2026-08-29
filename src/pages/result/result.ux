@@ -53,7 +53,7 @@
 <script>
 import router from '@system.router'
 import prompt from '@system.prompt'
-import { fmtNum } from '../../common/logic/parser.js'
+import { loadSettings, fmtOut } from '../../common/logic/settings.js'
 import { segsToText } from '../../common/logic/fmt.js'
 
 export default {
@@ -74,6 +74,7 @@ export default {
     const r = this.$app.$def.reaction
     if (!r) { this.valid = false; return }
     this.valid = true
+    this._rxn = r
 
     // 整条方程式单字符串：aX + bY = cZ
     const nR = r.reactants.length
@@ -89,15 +90,22 @@ export default {
     }
     this.eqText = text
     this.condText = r.cond ? '条件：' + r.cond : ''
-
-    const rows = []
-    for (let i = 0; i < r.coefs.length; i++) {
-      rows.push({ text: segsToText(r.segs[i], r.coefs[i]), mrText: fmtNum(r.mr[i]), idx: i, rid: 'm' + i })
-    }
-    this.mrRows = rows
     this.rxnType = r.type
 
+    this.buildRows()
+    // 精度设置异步就绪后按最新精度重排数值（幂等）
+    loadSettings(() => { this.buildRows() })
+
     this.applyLayout(text, !!this.condText)
+  },
+
+  buildRows() {
+    const r = this._rxn
+    const rows = []
+    for (let i = 0; i < r.coefs.length; i++) {
+      rows.push({ text: segsToText(r.segs[i], r.coefs[i]), mrText: fmtOut(r.mr[i]), idx: i, rid: 'm' + i })
+    }
+    this.mrRows = rows
   },
 
   /**

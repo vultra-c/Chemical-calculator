@@ -1,0 +1,97 @@
+<!--
+  化学工具箱 · 常量显示（336×480，闪念小抄/弦电子书同款风格）
+  常用化学常数速查（只读列表）。数据在 common/logic/constants.js（纯数据可单测）。
+  6 项会滚动：沿用「全屏铺底 .list + top_fade.png 渐变遮罩」的滚动页规范（同 catalog）。
+-->
+<template>
+  <div class="page" @swipe="onSwipe">
+
+    <list class="list">
+      <list-item for="{{rows}}" tid="rid" type="row" class="const-item">
+        <div class="const-content">
+          <text class="const-name">{{$item.name}}</text>
+          <text class="const-value">{{$item.value}}</text>
+          <text class="const-note">{{$item.note}}</text>
+        </div>
+      </list-item>
+    </list>
+
+    <!-- 顶部渐变遮罩（滚动内容在顶栏下沿渐隐） -->
+    <img static src="/common/images/top_fade.png" class="top-fade" />
+
+    <!-- 顶栏（闪念小抄同款） -->
+    <img static src="/common/images/hd.png" class="hd-bg" />
+    <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
+    <text static class="hd-sub">常用常数速查</text>
+    <text static class="hd-title">常量显示</text>
+
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import { CONSTANTS } from '../../common/logic/constants.js'
+
+const ROWS = []
+for (let i = 0; i < CONSTANTS.length; i++) {
+  ROWS.push({
+    rid: 'k' + i,
+    name: CONSTANTS[i].name,
+    value: CONSTANTS[i].value,
+    note: CONSTANTS[i].note || ''
+  })
+}
+
+export default {
+  private: {
+    rows: ROWS
+  },
+  goBack() { router.back() },
+  onSwipe(e) {
+    if (e && e.direction === 'right') router.back()
+  },
+  onBackPress() {
+    router.back()
+    return true
+  }
+}
+</script>
+
+<style>
+@import '../../common/style.css';
+
+/* 常量行：112px 菜单卡片同族，略降为 88px 以容下备注行 */
+.const-item {
+  width: 100%;
+  height: 88px;
+  padding: 12px 22px;
+  margin-bottom: 8px;
+  border-radius: 36px;
+  background-color: #262626;
+}
+.const-content {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+.const-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.const-value {
+  font-size: 22px;
+  color: #4da3ff;
+  lines: 1;
+  margin-top: 2px;
+}
+.const-note {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.4);
+  lines: 1;
+  margin-top: 2px;
+}
+</style>

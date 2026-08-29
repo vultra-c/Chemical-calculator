@@ -8,19 +8,22 @@
 
   与主页同款顶部过渡：list 全屏铺底 + padding-top 102（主页 .list 同款），
   再叠 top_fade.png（上不透明→下透明）渐变遮罩——滑动时卡片在顶栏下沿渐隐，
-  不再是 y=102 硬截断；分组标题行(type=title)用蓝色小字与卡片行区分。
+  不再是 y=102 硬截断。
+
+  注意：Vela 的 list-item 上 for 与 if 同用不会按条目求值（真机验证会整列不渲染）！
+  标题行/物质行/加载行必须共用同一 type="row" 与同一 DOM 结构，
+  差异全部用三元动态 class 表达（与 mass 页 chip-on/chip 同款模式）。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
     <!-- 列表（全屏铺底 + 顶部 padding，分块加载） -->
     <list class="cat-list" if="{{visibleRows.length > 0}}" onscrollbottom="onReachBottom">
-      <list-item for="{{visibleRows}}" if="{{$item.kind === 'title'}}" tid="rid" type="title" class="cat-title-item">
-        <text class="cat-title">{{$item.main}}</text>
-      </list-item>
-      <list-item for="{{visibleRows}}" if="{{$item.kind === 'item'}}" tid="rid" type="row" class="cat-item" @click="onRowClick($item)">
+      <list-item for="{{visibleRows}}" tid="rid" type="row"
+                 class="{{$item.kind === 'title' ? 'cat-title-item' : 'cat-item'}}"
+                 @click="onRowClick($item)">
         <div class="cat-content">
-          <text class="cat-main">{{$item.main}}</text>
-          <text class="cat-sub">{{$item.sub}}</text>
+          <text class="{{$item.kind === 'title' ? 'cat-title' : 'cat-main'}}">{{$item.main}}</text>
+          <text class="{{$item.kind === 'title' ? 'cat-title' : 'cat-sub'}}">{{$item.sub}}</text>
         </div>
       </list-item>
       <list-item if="{{hasMore}}" type="more" class="cat-item" @click="onReachBottom">
@@ -118,14 +121,7 @@ export default {
   padding: 102px 6px 8px;
 }
 
-/* 顶部渐变遮罩：上不透明黑→下透明（0..77 不透、78..100 渐隐） */
-.top-fade {
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  width: 336px;
-  height: 101px;
-}
+/* （.top-fade 已上收至 common/style.css，滚动页通用） */
 
 /* 分组标题行：蓝色小字、无卡片底，与物质卡片行拉开层级 */
 .cat-title-item {

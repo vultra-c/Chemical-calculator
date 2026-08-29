@@ -12,7 +12,7 @@ import {
 
 // ---------------- 分类 ----------------
 
-const ORGANICS = ['CH4', 'C2H5OH', 'CH3OH', 'C2H2', 'C6H12O6', 'C12H22O11', 'CH3COOH']
+const ORGANICS = ['CH4', 'C2H5OH', 'CH3OH', 'C2H2', 'C6H12O6', 'C12H22O11', 'CH3COOH', 'C2H4', 'C3H8']
 
 const ACID_ANION = {
   HCl: 'Cl', H2SO4: 'SO4', HNO3: 'NO3',
@@ -270,6 +270,14 @@ addSpec(['H2CO3'], ['H2O', 'CO2'], '分解反应', '（不稳定，自行分解�
 addSpec(['HgO'], ['Hg', 'O2'], '分解反应', '加热')
 addSpec(['Al2O3'], ['Al', 'O2'], '分解反应', '通电电解（熔融）')
 addSpec(['Fe(OH)3'], ['Fe2O3', 'H2O'], '分解反应', '加热')
+addSpec(['Mg(OH)2'], ['MgO', 'H2O'], '分解反应', '加热')
+addSpec(['Cu(OH)2'], ['CuO', 'H2O'], '分解反应', '加热')
+addSpec(['NH4Cl'], ['NH3', 'HCl'], '分解反应', '加热')
+addSpec(['MgCO3'], ['MgO', 'CO2'], '分解反应', '高温')
+addSpec(['ZnCO3'], ['ZnO', 'CO2'], '分解反应', '高温')
+addSpec(['KNO3'], ['KNO2', 'O2'], '分解反应', '加热')
+addSpec(['NaNO3'], ['NaNO2', 'O2'], '分解反应', '加热')
+addSpec(['HNO3'], ['NO2', 'O2', 'H2O'], '分解反应', '光照或受热')
 
 // 化合 / 特殊氧化还原
 addSpec(['C', 'CO2'], ['CO'], '化合反应', '高温')
@@ -280,9 +288,24 @@ addSpec(['N2', 'H2'], ['NH3'], '化合反应', '高温高压、催化剂')
 addSpec(['Fe', 'H2O'], ['Fe3O4', 'H2'], '置换反应', '高温（水蒸气）')
 addSpec(['Na2O2', 'H2O'], ['NaOH', 'O2'], '氧化还原反应', '')
 addSpec(['Na2O2', 'CO2'], ['Na2CO3', 'O2'], '氧化还原反应', '')
+addSpec(['Fe', 'S'], ['FeS'], '化合反应', '加热')
+// 金属/氢气 + 氯气（Cl2 氧化性强，Fe 生成 +3 价 FeCl3）
+addSpec(['Na', 'Cl2'], ['NaCl'], '化合反应', '点燃')
+addSpec(['Mg', 'Cl2'], ['MgCl2'], '化合反应', '点燃')
+addSpec(['Al', 'Cl2'], ['AlCl3'], '化合反应', '点燃')
+addSpec(['Fe', 'Cl2'], ['FeCl3'], '化合反应', '点燃')
+addSpec(['Cu', 'Cl2'], ['CuCl2'], '化合反应', '点燃')
+addSpec(['H2', 'Cl2'], ['HCl'], '化合反应', '点燃')
+// 高中经典氧化还原
+addSpec(['NO', 'O2'], ['NO2'], '化合反应', '')
+addSpec(['SO2', 'O2'], ['SO3'], '氧化还原反应', '催化剂、加热')
+addSpec(['NH3', 'O2'], ['NO', 'H2O'], '氧化还原反应', '催化剂、加热')
+addSpec(['H2O', 'NO2'], ['HNO3', 'NO'], '氧化还原反应', '')
+addSpec(['HCl', 'MnO2'], ['MnCl2', 'Cl2', 'H2O'], '氧化还原反应', '加热、浓盐酸')
 
 // 三元
 addSpec(['CO2', 'H2O', 'CaCO3'], ['Ca(HCO3)2'], '化合反应', '')
+addSpec(['CO2', 'H2O', 'Na2CO3'], ['NaHCO3'], '化合反应', '')
 
 // ---------------- 主入口 ----------------
 
