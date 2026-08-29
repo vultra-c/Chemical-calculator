@@ -17,7 +17,7 @@ export { equationText } from './fmt.js'
 export const ELEMENT_SYMBOLS = Object.keys(ATOMIC_MASSES)
 
 /** 中文元素名 → 元素符号（氧→O、铁→Fe …，供元素查询输入） */
-const ELEMENT_CN = {
+export const ELEMENT_CN = {
   '氢': 'H', '氦': 'He', '锂': 'Li', '铍': 'Be', '硼': 'B',
   '碳': 'C', '氮': 'N', '氧': 'O', '氟': 'F', '氖': 'Ne',
   '钠': 'Na', '镁': 'Mg', '铝': 'Al', '硅': 'Si', '磷': 'P',

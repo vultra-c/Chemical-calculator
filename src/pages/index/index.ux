@@ -2,7 +2,7 @@
   化学工具箱 · 主页（336×480）
   闪念小抄 UI 风格：hd.png 顶栏 + 双行居中标题 + 112px 大圆角功能卡片列表。
   右滑 / 返回键退出应用。
-  5 个功能项可滚动，按滚动页规范叠 top_fade 渐变遮罩；
+  6 个功能项可滚动，按滚动页规范叠 top_fade 渐变遮罩；
   onShow 时按持久化设置恢复常亮（app.ux onCreate 之外的双保险）。
 -->
 <template>
@@ -44,7 +44,8 @@ export default {
       { id: 'm2', uri: 'pages/element', title: '元素查询', sub: '按元素或名称查找方程式' },
       { id: 'm3', uri: 'pages/synth', title: '合成查询', sub: '输入产物，逆推需要的反应物' },
       { id: 'm4', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
-      { id: 'm5', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' }
+      { id: 'm5', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' },
+      { id: 'm6', uri: 'pages/reference', title: '化学速查', sub: '活动性 · 化合价 · 原子量 · 沉淀' }
     ]
   },
 

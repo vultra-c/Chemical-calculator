@@ -241,6 +241,52 @@ T('逆推 已知多个反应物全匹配才命中', () => {
   assert(comps.length === 1 && comps[0].missing.length === 0)
 })
 
+// ---- 数据速查（reference.js） ----
+import { REFERENCE_SECTIONS, flattenReference, cnName } from '../src/common/logic/reference.js'
+T('速查 五组齐备', () => {
+  const titles = REFERENCE_SECTIONS.map(s => s.title)
+  for (const t of ['金属活动性顺序', '常见元素化合价', '常见根 / 酸根化合价', '常见不溶物（沉淀）', '相对原子质量表']) {
+    assert(titles.indexOf(t) !== -1, '缺组 ' + t)
+  }
+})
+T('速查 原子质量 38 元素成对成行', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '相对原子质量表')
+  assert.equal(sec.rows.length, 19)
+  assert(sec.rows[0].main.indexOf('氢 H') !== -1)
+  assert(sec.rows[0].sub.indexOf('氦 He') !== -1)
+})
+T('速查 活动性三行序列', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '金属活动性顺序')
+  assert(sec.rows.joined === undefined)
+  const joined = sec.rows.map(r => r.main).join(' ')
+  assert(joined.indexOf('K > Ca > Na') !== -1 && joined.indexOf('Pt > Au') !== -1)
+})
+T('速查 化合价含 K+1 Al+3 与铁变价', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '常见元素化合价')
+  const mains = sec.rows.map(r => r.main + '|' + r.sub)
+  assert(mains.some(m => m.indexOf('钾 K') >= 0 && m.indexOf('+1') >= 0))
+  assert(mains.some(m => m.indexOf('铝 Al') >= 0 && m.indexOf('+3') >= 0))
+  assert(mains.some(m => m.indexOf('变价·低价') >= 0) && mains.some(m => m.indexOf('变价·高价') >= 0))
+})
+T('速查 酸根含硫酸根-2/磷酸根-3', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '常见根 / 酸根化合价')
+  const t = sec.rows.map(r => r.main + r.sub).join(' ')
+  assert(t.indexOf('硫酸根') !== -1 && t.indexOf('-2') !== -1)
+  assert(t.indexOf('磷酸根') !== -1 && t.indexOf('-3') !== -1)
+})
+T('速查 沉淀表含碳酸钙/氯化银', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '常见不溶物（沉淀）')
+  const t = sec.rows.map(r => r.main + r.sub).join(' ')
+  assert(t.indexOf('碳酸钙') !== -1 && t.indexOf('氯化银') !== -1)
+  assert(sec.rows.length >= 15)
+})
+T('速查 flattenReference 行流带标题行', () => {
+  const rows = flattenReference()
+  assert.equal(rows.filter(r => r.kind === 'title').length, 5)
+  assert(rows.length > 70)
+  assert.equal(cnName('Fe'), '铁')
+})
+
 // ---- 化学专属输入词库（gen_chem_dict.py 生成；防回归） ----
 const { SimpleInputMethod } = await import('../src/components/InputMethod/assets/dicUtil.js')
 const { getWords } = await import('../src/components/InputMethod/assets/dic_words.js')
@@ -264,6 +310,12 @@ T('词库 lv→铝（多词同拼合并）', () => {
 T('词库 fanying 反应族齐备', () => {
   const w = getWords()
   for (const k of ['fenjiefanying', 'huahefanying', 'zhihuanfanying', 'fufenjiefanying']) {
+    assert(w[k], k + ' 应在词库中')
+  }
+})
+T('词库 仪器与概念词齐备', () => {
+  const w = getWords()
+  for (const k of ['shiguan', 'rongjiedu', 'jiqiping', 'jiujingdeng', 'baoherongye']) {
     assert(w[k], k + ' 应在词库中')
   }
 })

@@ -32,10 +32,10 @@
     <text show="{{searched}}" class="panel-hd-n">{{synthResults.length}} 条</text>
     <text show="{{searched && synthResults.length == 0}}" class="panel-none">{{noneMsg}}</text>
     <list show="{{searched && synthResults.length > 0}}" class="eq-list" onscrollbottom="onReachBottom">
-      <list-item for="{{visibleResults}}" tid="rid" type="eq" class="eq-item" @click="openEquation($item)">
+      <list-item for="{{visibleResults}}" tid="rid" type="eq" class="{{'eq-item ' + ($item.tall ? 'eq-item-lg' : '')}}" @click="openEquation($item)">
         <div class="eq-content">
-          <text class="eq-item-text">{{$item.text}}</text>
-          <text class="eq-item-type">{{$item.type}}</text>
+          <text class="{{'eq-item-text' + ($item.tall ? ' eq-text-lg' : '')}}">{{$item.text}}</text>
+          <text class="{{'eq-item-type' + ($item.tall ? ' eq-type-lg' : '')}}">{{$item.type}}</text>
         </div>
       </list-item>
       <list-item if="{{hasMoreRes}}" type="more" class="eq-more" @click="onReachBottom">
@@ -167,25 +167,31 @@ export default {
     try {
       if (known) {
         const comps = findCompletions(product.formula, [known.formula], 50)
-        // 行文案：方程式 + 类型 · 还需 X（反应物已凑齐则标注）
+        // 行文案：方程式 + 类型 · 还需 X（反应物已凑齐则标注）；超 26 字符切两行高卡
         hits = comps.map((c, i) => {
+          const eq = equationText(c.entry)
           const missText = c.missing.map(m => formulaToText(m)).join('、')
           return {
-            text: equationText(c.entry),
+            text: eq,
             type: c.missing.length ? c.entry.t + ' · 还需 ' + missText : c.entry.t + ' · 反应物已齐',
             entry: c.entry,
+            tall: eq.length > 26,
             rid: 'c' + i
           }
         })
         this.noneMsg = '没有同时使用该反应物的合成路径'
       } else {
         const rows = findProducers(product.formula, 50)
-        hits = rows.map((e, i) => ({
-          text: equationText(e),
-          type: e.t,
-          entry: e,
-          rid: 'p' + i
-        }))
+        hits = rows.map((e, i) => {
+          const eq = equationText(e)
+          return {
+            text: eq,
+            type: e.t,
+            entry: e,
+            tall: eq.length > 26,
+            rid: 'p' + i
+          }
+        })
         this.noneMsg = '没有能合成该物质的反应'
       }
     } catch (err) {
@@ -363,6 +369,19 @@ export default {
   margin-top: 1px;
   lines: 1;
   text-overflow: ellipsis;
+}
+/* 长方程行：76px 两行小字卡（动态 class，与基础行 type 一致） */
+.eq-item-lg {
+  height: 76px;
+}
+.eq-text-lg {
+  font-size: 18px;
+  line-height: 23px;
+  lines: 2;
+}
+.eq-type-lg {
+  font-size: 15px;
+  line-height: 17px;
 }
 .eq-more {
   width: 100%;

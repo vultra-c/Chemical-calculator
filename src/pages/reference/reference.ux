@@ -1,0 +1,141 @@
+<!--
+  化学工具箱 · 化学速查页（336×480，闪念小抄风格）
+  金属活动性顺序 / 化合价 / 酸根 / 不溶物 / 相对原子质量 五组速查，
+  与常用物质表同款：分组标题 + 62px 卡片行 + top_fade 渐变遮罩 + 分块渲染。
+  数据在 common/logic/reference.js（纯数据可单测，派生自 elements.js 常量）。
+-->
+<template>
+  <div class="page" @swipe="onSwipe">
+
+    <list class="cat-list" if="{{visibleRows.length > 0}}" onscrollbottom="onReachBottom">
+      <list-item for="{{visibleRows}}" tid="rid" type="row"
+                 class="{{$item.kind === 'title' ? 'cat-title-item' : 'cat-item'}}">
+        <div class="cat-content">
+          <text class="{{$item.kind === 'title' ? 'cat-title' : 'cat-main'}}">{{$item.main}}</text>
+          <text class="{{$item.kind === 'title' ? 'cat-title' : 'cat-sub'}}">{{$item.sub}}</text>
+        </div>
+      </list-item>
+      <list-item if="{{hasMore}}" type="more" class="cat-item" @click="onReachBottom">
+        <div class="cat-content cat-content-center">
+          <text class="cat-more">▼ 还有 {{total - visibleRows.length}} 条，上滑加载更多</text>
+        </div>
+      </list-item>
+    </list>
+
+    <!-- 顶部渐变遮罩（不透明黑→透明，滚动内容在其下方渐隐） -->
+    <img static src="/common/images/top_fade.png" class="top-fade" />
+
+    <!-- 顶栏（闪念小抄同款） -->
+    <img static src="/common/images/hd.png" class="hd-bg" />
+    <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
+    <text static class="hd-sub">活动性 · 化合价 · 原子量</text>
+    <text static class="hd-title">化学速查</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import { flattenReference } from '../../common/logic/reference.js'
+
+// 全量行流（约 90 行）一次性构建（同步）；显示分块加载避免首屏卡顿
+const ALL_ROWS = flattenReference()
+const CHUNK = 20
+
+export default {
+  private: {
+    visibleRows: [],
+    renderPos: 0,
+    total: ALL_ROWS.length,
+    hasMore: false
+  },
+
+  onInit() {
+    this.renderPos = Math.min(CHUNK, ALL_ROWS.length)
+    this.visibleRows = ALL_ROWS.slice(0, this.renderPos)
+    this.hasMore = this.renderPos < ALL_ROWS.length
+  },
+
+  onReachBottom() {
+    if (!this.hasMore) return
+    const end = Math.min(this.renderPos + CHUNK, ALL_ROWS.length)
+    this.visibleRows = this.visibleRows.concat(ALL_ROWS.slice(this.renderPos, end))
+    this.renderPos = end
+    this.hasMore = this.renderPos < ALL_ROWS.length
+  },
+
+  goBack() { router.back() },
+  onSwipe(e) {
+    if (e && e.direction === 'right') router.back()
+  },
+  onBackPress() {
+    router.back()
+    return true
+  }
+}
+</script>
+
+<style>
+@import '../../common/style.css';
+
+.cat-list {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 336px;
+  height: 480px;
+  padding: 102px 6px 8px;
+}
+
+/* 分组标题行：蓝色小字、无卡片底，与数据行拉开层级 */
+.cat-title-item {
+  width: 100%;
+  height: 40px;
+  padding: 4px 22px;
+  margin-bottom: 2px;
+  background-color: #000000;
+}
+.cat-title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: bold;
+  color: #0d84ff;
+}
+.cat-item {
+  width: 100%;
+  height: 62px;
+  padding: 6px 20px;
+  margin-bottom: 7px;
+  border-radius: 24px;
+  background-color: #262626;
+}
+.cat-content {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+.cat-content-center {
+  align-items: center;
+}
+.cat-main {
+  width: 100%;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.cat-sub {
+  width: 100%;
+  font-size: 17px;
+  line-height: 22px;
+  color: rgba(255, 255, 255, 0.45);
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.cat-more {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.35);
+}
+</style>

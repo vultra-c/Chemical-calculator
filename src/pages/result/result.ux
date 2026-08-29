@@ -109,8 +109,10 @@ export default {
   },
 
   /**
-   * 版面自适应：按 28px 粗体在 284px 行宽下的视觉宽度估算折行数（1-3），
-   * 结合有无条件行得到高度档位，卡片收紧、省下的空间全部让给下方列表。
+   * 版面自适应：估算折行数（1-3）× 有无条件行得到高度档位，
+   * 卡片收紧、省下的空间全部让给下方列表。
+   * 真机字宽与估算有偏差，故 Unicode 下标加权 0.9、行容量留 5% 冗余，
+   * 且长方程（l3 档）自动缩字号到 24px 再兜一层——宁可多算一行也不截断。
    */
   applyLayout(text, hasCond) {
     let units = 0
@@ -124,9 +126,10 @@ export default {
       else if (code >= 65 && code <= 90) units += 0.68       // A-Z
       else if (code >= 97 && code <= 122) units += 0.55     // a-z
       else if (code >= 48 && code <= 57) units += 0.55      // 0-9
-      else units += 0.55                                     // Unicode 下标等
+      else if (code >= 0x2000) units += 0.9                 // Unicode 下标真机偏宽
+      else units += 0.55
     }
-    const lines = Math.max(1, Math.min(3, Math.ceil(units / 10)))
+    const lines = Math.max(1, Math.min(3, Math.ceil(units / 9.5)))
     const lv = 'l' + lines + (hasCond ? 'c' : '')
     this.cardVariant = 'eq-card-' + lv
     this.textVariant = 'eq-text-' + lv
@@ -213,9 +216,10 @@ export default {
 .eq-card-l2c { height: 172px; }
 .eq-card-l3  { height: 182px; }
 .eq-card-l3c { height: 212px; }
+/* 长方程降档缩字号：l2 26px / l3 24px，防真机字宽偏差导致截断 */
 .eq-text-l1,  .eq-text-l1c { lines: 1; }
-.eq-text-l2,  .eq-text-l2c { lines: 2; }
-.eq-text-l3,  .eq-text-l3c { lines: 3; }
+.eq-text-l2,  .eq-text-l2c { lines: 2; font-size: 26px; line-height: 38px; }
+.eq-text-l3,  .eq-text-l3c { lines: 3; font-size: 24px; line-height: 34px; }
 
 .sec-label {
   position: absolute;

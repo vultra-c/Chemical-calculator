@@ -32,10 +32,10 @@
     <text show="{{searched}}" class="panel-hd-n">{{elementResults.length}} 条</text>
     <text show="{{searched && elementResults.length == 0}}" class="panel-none">没有同时含这些元素的方程式</text>
     <list show="{{searched && elementResults.length > 0}}" class="eq-list" onscrollbottom="onReachBottom">
-      <list-item for="{{visibleResults}}" tid="rid" type="eq" class="eq-item" @click="openEquation($item)">
+      <list-item for="{{visibleResults}}" tid="rid" type="eq" class="{{'eq-item ' + ($item.tall ? 'eq-item-lg' : '')}}" @click="openEquation($item)">
         <div class="eq-content">
-          <text class="eq-item-text">{{$item.text}}</text>
-          <text class="eq-item-type">{{$item.type}}</text>
+          <text class="{{'eq-item-text' + ($item.tall ? ' eq-text-lg' : '')}}">{{$item.text}}</text>
+          <text class="{{'eq-item-type' + ($item.tall ? ' eq-type-lg' : '')}}">{{$item.type}}</text>
         </div>
       </list-item>
       <list-item if="{{hasMoreRes}}" type="more" class="eq-more" @click="onReachBottom">
@@ -157,7 +157,9 @@ export default {
     }
     const rows = []
     for (let i = 0; i < hits.length; i++) {
-      rows.push({ text: equationText(hits[i]), type: hits[i].t, entry: hits[i], rid: 'e' + i })
+      const eq = equationText(hits[i])
+      // 超 26 字符切两行高卡（真机下标偏宽，余量已放大）
+      rows.push({ text: eq, type: hits[i].t, entry: hits[i], tall: eq.length > 26, rid: 'e' + i })
     }
     this.elementResults = rows
     this.visibleResults = rows.slice(0, RES_CHUNK)
@@ -329,6 +331,21 @@ export default {
   line-height: 20px;
   color: #4da3ff;
   margin-top: 1px;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+/* 长方程行：76px 两行小字卡（动态 class，与基础行 type 一致） */
+.eq-item-lg {
+  height: 76px;
+}
+.eq-text-lg {
+  font-size: 18px;
+  line-height: 23px;
+  lines: 2;
+}
+.eq-type-lg {
+  font-size: 15px;
+  line-height: 17px;
 }
 .eq-more {
   width: 100%;
