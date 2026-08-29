@@ -55,3 +55,14 @@ This file records user instructions, preferences, and teachings for reference in
   - 正确模式: 同页单 type 单 list-item,DOM 结构完全一致,行内差异用三元动态 class 表达(class="{{$item.kind === 'x' ? 'a' : 'b'}}"),该方法已在 catalog/mass 真机验证
   - 同类 CSS 限制: 不支持后代选择器(.a .b),构建期告警「Selector type unsupport Descendant Selector」,样式静默失效
   - 完整 UI 规范已固化在仓库根目录 VELA_UI_SKILL.md,新页面开发先读它
+
+[滚动页渐变遮罩 top_fade.png 的资产规格]
+- Date: 2026-08-29
+- Context: Discovered by Agent while 修复用户反馈「遮罩位置错误/像多加了一层」
+- Category: Environment Configuration
+- Instructions:
+  - common/images/top_fade.png(336×101) 必须是「探头 0(y=0,α=255)→100(y=100,α=0) 的全程线性单段渐变」
+  - 禁止分段/阶梯 alpha(如 0..70 全不透明 + 末端短渐隐):真机上会形成不透明黑板+一条尾巴,观感是"在原遮罩上再加一层"
+  - 该 PNG 绘制于 list 之后.hd 顶栏之前;hd.png 自身含 255→6 渐变,: composite 后仍是单条平滑过渡,前提是遮罩自身连续无阶梯
+  - 用 scripts 内联的 python/zlib 生成器再生成(环境无 PIL/optipng)
+

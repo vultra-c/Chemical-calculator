@@ -3,7 +3,7 @@
 纯离线运行的化学反应计算工具，适配小米 Vela 穿戴设备。所有计算、元素数据、反应规则库均本地内置，无需联网。
 
 - 包名：`com.whyy.chemcalc`
-- 当前版本：`V26.8.44.CALC`（versionCode 2608440）
+- 当前版本：`V26.8.45.CALC`（versionCode 2608450）
 - 设计尺寸：336 × 480（designWidth 336，与考点阅读器一致）
 - UI 风格规范：仓库根目录 `VELA_UI_SKILL.md`（后续 AI 开发必读）
 
