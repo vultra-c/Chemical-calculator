@@ -1,7 +1,7 @@
 /**
  * 化学专属整词词库（scripts/gen_chem_dict.py 自动生成，勿手改）。
  * key 为连续全拼（无空格、无隔音符，全小写，ü→v），value 为对应词。
- * 词表 = NAME_MAP 全部物质名 + 41 元素名 + 化学常用术语，共 247 个全拼键。
+ * 词表 = NAME_MAP 全部物质名 + 41 元素名 + 化学常用术语，共 249 个全拼键。
  * 相比原通用词库（约 3000 词 / 110KB），初始化内存与 forwardIndex 构建成本大幅降低。
  * 惰性加载：对象在首次 getWords() 时才创建。
  */
@@ -24,6 +24,7 @@ function getWords() {
   "cuihua": "催化",
   "cuihuaji": "催化剂",
   "cusuan": "醋酸",
+  "cusuanna": "醋酸钠",
   "dalishi": "大理石",
   "dalishizhuyaochengfen": "大理石主要成分",
   "dan": "氮",
@@ -242,6 +243,7 @@ function getWords() {
   "yichun": "乙醇",
   "yigui": "乙炔",
   "yin": "银",
+  "yisuanna": "乙酸钠",
   "yixi": "乙烯",
   "yiyanghuatan": "一氧化碳",
   "zhangjingloudou": "长颈漏斗",

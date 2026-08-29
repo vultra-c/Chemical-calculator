@@ -65,10 +65,11 @@
 
 hd-bg/back/more/sub/title 的坐标与样式已在 `common/style.css` 定义，新页面直接用。
 
-- hd.png 本身几乎全透明，仅作装饰层；**它不是遮罩**。
-- **滚动列表页**必须在 list 之后、顶栏元素之前加渐变遮罩：
-  `<img static src="/common/images/top_fade.png" class="top-fade" />`
-  （上 78px 不透明黑 → 23px 渐隐，内容滑到顶栏下沿柔和消失。catalog / constants 已用）
+- **hd.png 本身就是遮罩**：它 336×102，alpha 逐行 255→6，绘制在 list 之后时，
+  滚动内容在顶栏下方自然渐隐（与弦电子书原版 hd.png 逐字节一致）。
+- **禁止再叠任何自制遮罩层**（如 top_fade.png）：叠层会压住 hd.png 的渐变，
+  真机观感是「遮罩消失 / 像多加了一层」（2026-08 真机连踩三次后确认，
+  相关资产与 .top-fade 类已全部移除）。滚动列表页只需 hd 四件套原样带上。
 
 ## 3. 页面骨架模式
 
@@ -123,7 +124,7 @@ hd-bg/back/more/sub/title 的坐标与样式已在 `common/style.css` 定义，�
 1. 路由是否注册进 `src/manifest.json` `router.pages`？
 2. 页面是否 `page` 根 + `@swipe` + `onBackPress`？
 3. 顶栏四件套（hd/back(或 more)/sub/title）是否原样带上？
-4. 有滚动列表吗？有则 `.list` 全屏铺底 + `top_fade.png` 遮罩 + 分块渲染 + `tid` + 同 type 同 DOM。
+4. 有滚动列表吗？有则 `.list` 全屏铺底 + 分块渲染 + `tid` + 同 type 同 DOM；遮罩交给 hd.png 自身渐变，**不得**叠自制遮罩层。
 5. 输入相关元素是否在 y ≤ 252px 安全区（有键盘时）？
 6. 用到 `@system.*` 的模块是否只在页面层 import？纯逻辑库保持 Node 可测。
 7. 显示数值是否走 `fmtOut`（尊重用户精度设置）？

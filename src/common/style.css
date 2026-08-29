@@ -61,16 +61,10 @@
   text-overflow: ellipsis;
 }
 
-/* ---- 滚动页顶部渐变遮罩（全屏铺底列表专用） ----
- * 叠在 list 之后、顶栏元素之前：滑动时内容在顶栏下沿渐隐，不生硬截断。
- * 用法：<img static src="/common/images/top_fade.png" class="top-fade" /> */
-.top-fade {
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  width: 336px;
-  height: 101px;
-}
+/* ---- 滚动页顶部渐隐：hd.png 顶栏自身渐变即遮罩（原版设计） ----
+ * 不要叠任何额外遮罩层（如自制 top_fade.png）：叠层会盖住 hd.png 的渐变，
+ * 真机观感是「遮罩消失 / 像多加了一层」。滚动内容只需在 list 之后绘制 hd-bg。
+ */
 
 /* ---- 闪念小抄同款列表与卡片 ---- */
 .list {

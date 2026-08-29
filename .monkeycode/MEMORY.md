@@ -56,13 +56,16 @@ This file records user instructions, preferences, and teachings for reference in
   - 同类 CSS 限制: 不支持后代选择器(.a .b),构建期告警「Selector type unsupport Descendant Selector」,样式静默失效
   - 完整 UI 规范已固化在仓库根目录 VELA_UI_SKILL.md,新页面开发先读它
 
-[滚动页渐变遮罩 top_fade.png 的资产规格]
-- Date: 2026-08-29
-- Context: Discovered by Agent while 修复用户反馈「遮罩位置错误/像多加了一层」
+[滚动页顶部渐隐：hd.png 自身即遮罩，禁止额外叠层]
+- Date: 2026-08-29（20-08 修订：此前「top_fade 规格」条目结论错误，以本条为准）
+- Context: 用户多次反馈遮罩消失/位置错误/像多加一层；最终用户指认弦电子书仓库 e2e 原版
 - Category: Environment Configuration
 - Instructions:
-  - common/images/top_fade.png(336×101) 必须是「探头 0(y=0,α=255)→100(y=100,α=0) 的全程线性单段渐变」
-  - 禁止分段/阶梯 alpha(如 0..70 全不透明 + 末端短渐隐):真机上会形成不透明黑板+一条尾巴,观感是"在原遮罩上再加一层"
-  - 该 PNG 绘制于 list 之后.hd 顶栏之前;hd.png 自身含 255→6 渐变,: composite 后仍是单条平滑过渡,前提是遮罩自身连续无阶梯
-  - 用 scripts 内联的 python/zlib 生成器再生成(环境无 PIL/optipng)
+  - 原版设计里 common/images/hd.png（336×102，α 逐行 255→6）本身就是顶部渐隐遮罩，
+    与弦电子书仓库 src/common/images/hd.png 逐字节一致
+  - 滚动列表页正确结构：list 全屏铺底 → 直接画 hd 四件套；内容滑入顶栏下方时被 hd.png 半透明底部自然渐隐
+  - 严禁叠任何自制遮罩层/自制 top_fade.png（无论 alpha 如何调）：
+    叠层会盖住 hd.png 渐变——表现为「遮罩消失」或「像多加了一层」；
+    全部相关资产、.top-fade 样式与各页引用已移除（2026-08-29）
+  - 每次改动涉及顶部视觉时，先核对 VELA_UI_SKILL.md 第 2 节
 

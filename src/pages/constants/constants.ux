@@ -1,7 +1,7 @@
 <!--
   化学工具箱 · 常量显示（336×480，闪念小抄/弦电子书同款风格）
   常用化学常数速查（只读列表）。数据在 common/logic/constants.js（纯数据可单测）。
-  6 项会滚动：沿用「全屏铺底 .list + top_fade.png 渐变遮罩」的滚动页规范（同 catalog）。
+  6 项会滚动：沿用「全屏铺底 .list」滚动页结构（同 catalog）；遮罩由 hd.png 自身渐变承担。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
@@ -16,8 +16,6 @@
       </list-item>
     </list>
 
-    <!-- 顶部渐变遮罩（滚动内容在顶栏下沿渐隐） -->
-    <img static src="/common/images/top_fade.png" class="top-fade" />
 
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />

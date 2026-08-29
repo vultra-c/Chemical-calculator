@@ -7,7 +7,7 @@
   - for 变量 $item，tid 唯一
 
   与主页同款顶部过渡：list 全屏铺底 + padding-top 102（主页 .list 同款），
-  再叠 top_fade.png（上不透明→下透明）渐变遮罩——滑动时卡片在顶栏下沿渐隐，
+  顶栏 hd.png 自身带渐变（原版设计即遮罩），滑动时卡片在顶栏下沿渐隐，
   不再是 y=102 硬截断。
 
   注意：Vela 的 list-item 上 for 与 if 同用不会按条目求值（真机验证会整列不渲染）！
@@ -33,8 +33,6 @@
       </list-item>
     </list>
 
-    <!-- 顶部渐变遮罩（不透明黑→透明，滚动内容在其下方渐隐） -->
-    <img static src="/common/images/top_fade.png" class="top-fade" />
 
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
@@ -121,7 +119,6 @@ export default {
   padding: 102px 6px 8px;
 }
 
-/* （.top-fade 已上收至 common/style.css，滚动页通用） */
 
 /* 分组标题行：蓝色小字、无卡片底，与物质卡片行拉开层级 */
 .cat-title-item {

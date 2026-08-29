@@ -289,6 +289,12 @@ addSpec(['Fe', 'H2O'], ['Fe3O4', 'H2'], '置换反应', '高温（水蒸气）')
 addSpec(['Na2O2', 'H2O'], ['NaOH', 'O2'], '氧化还原反应', '')
 addSpec(['Na2O2', 'CO2'], ['Na2CO3', 'O2'], '氧化还原反应', '')
 addSpec(['Fe', 'S'], ['FeS'], '化合反应', '加热')
+// 铝热反应（工业冶铁示范）
+addSpec(['Al', 'Fe2O3'], ['Al2O3', 'Fe'], '置换反应', '高温（铝热）')
+// 有机酸（醋酸）中和
+addSpec(['CH3COOH', 'NaOH'], ['CH3COONa', 'H2O'], '复分解反应', '中和')
+addSpec(['CH3COOH', 'KOH'], ['CH3COOK', 'H2O'], '复分解反应', '中和')
+addSpec(['CH3COOH', 'Na2CO3'], ['CH3COONa', 'H2O', 'CO2'], '复分解反应', '')
 // 金属/氢气 + 氯气（Cl2 氧化性强，Fe 生成 +3 价 FeCl3）
 addSpec(['Na', 'Cl2'], ['NaCl'], '化合反应', '点燃')
 addSpec(['Mg', 'Cl2'], ['MgCl2'], '化合反应', '点燃')
@@ -396,7 +402,8 @@ export function solveReaction(reactantFormulas) {
     if (wi !== -1) {
       const other = rs[wi === 0 ? 1 : 0]
       if (['K', 'Ca', 'Na'].indexOf(other) !== -1) {
-        return assemble([other, 'H2O'], [buildBase(other, 1), 'H2'], '置换反应', '')
+        // 氢氧化物电荷按金属活动性电荷（Ca+2，K/Na+1），不得写死 +1
+        return assemble([other, 'H2O'], [buildBase(other, CATION_CHARGE[other] || 1), 'H2'], '置换反应', '')
       }
     }
   }
@@ -445,6 +452,7 @@ function tryTwo(a, b, ca, cb) {
   const orders = [[a, b, ca, cb], [b, a, cb, ca]]
   for (const [x, y, cx, cy] of orders) {
     const r =
+      ruleMoAo(x, y, cx, cy) ||
       ruleAoBase(x, y, cx, cy) ||
       ruleMoAcid(x, y, cx, cy) ||
       ruleAcidBase(x, y, cx, cy) ||
@@ -475,6 +483,17 @@ function ruleMoAcid(x, y, cx, cy) {
     const [m, q] = BASIC_OXIDES_FOR_ACID[x]
     const salt = buildSalt(m, q, ACID_ANION[y])
     return assemble([x, y], [salt, 'H2O'], '复分解反应', '')
+  }
+  return null
+}
+
+/** 可溶性金属氧化物 + 酸性氧化物 → 盐（直接化合） */
+const MO_AO_SALT = { Na2O: ['Na', 1], K2O: ['K', 1], CaO: ['Ca', 2], BaO: ['Ba', 2] }
+function ruleMoAo(x, y, cx, cy) {
+  if (cx === 'mo' && cy === 'ao' && MO_AO_SALT[x] && AO_ANION[y]) {
+    const [m, q] = MO_AO_SALT[x]
+    const salt = buildSalt(m, q, AO_ANION[y])
+    return assemble([x, y], [salt], '化合反应', '')
   }
   return null
 }

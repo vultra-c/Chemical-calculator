@@ -1,5 +1,7 @@
 import { getDict } from './dic.js'
-import { getDictJp } from './dic_jp.js'
+// 化学工具箱裁剪：日语假名词典已移除（rect 键盘 lang 仅 cn/en，jp 路径不可达；
+// dic_jp.js 约 25KB 会以源码内联进每个键盘页 bundle，纯无效负载）。
+// jp 分支保留但指向空表，结构上兼容，如需恢复日语请回看 git 历史。
 import { getWords } from './dic_words.js'
 import { getInitialsIndex } from './dic_words_initials.js'
 import { syllables } from './pinyin_syllables.js'
@@ -28,7 +30,7 @@ SimpleInputMethod.initDict = function() {
   this.dict.py2hz = getDict()
   this.dict.py2hz2 = {}
   this.dict.py2hz2['i'] = 'i' // 特殊处理
-  this.dict.romaji2kanji = getDictJp()
+  this.dict.romaji2kanji = {}
 
   // 合法音节集合 + 首字母索引：一次遍历 dic.js
   this.dict.syllableSet = new Set(syllables)

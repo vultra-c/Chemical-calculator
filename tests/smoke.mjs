@@ -203,6 +203,7 @@ T('计量 Zn+HCl 已知锌求氢气', () => {
 
 // ---- 产物逆推（合成查询） ----
 import { findProducers, findCompletions } from '../src/common/logic/reverseQuery.js'
+import { ELEMENT_BANK } from '../src/common/logic/elementBank.js'
 T('逆推 H2O：含 2H2+O2 且反应物少优先', () => {
   const hits = findProducers('H2O', 50)
   assert(hits.length > 0, '应有合成水的反应')
@@ -239,6 +240,38 @@ T('逆推 已知反应物未参与则无结果', () => {
 T('逆推 已知多个反应物全匹配才命中', () => {
   const comps = findCompletions('H2O', ['H2', 'O2'], 50)
   assert(comps.length === 1 && comps[0].missing.length === 0)
+})
+T('引擎 Ca+H2O 生成 Ca(OH)2 而非 CaOH', () => {
+  const r = solveReaction(['Ca', 'H2O'])
+  assert.equal(r.ok, true)
+  assert(r.reaction.products.indexOf('Ca(OH)2') !== -1)
+  assert(r.reaction.products.indexOf('CaOH') === -1)
+})
+T('引擎 铝热反应', () => {
+  const r = solveReaction(['Al', 'Fe2O3'])
+  assert.equal(r.ok, true)
+  assert(r.reaction.products.indexOf('Fe') !== -1 && r.reaction.products.indexOf('Al2O3') !== -1)
+  assert.equal(r.reaction.type, '置换反应')
+})
+T('引擎 金属氧化物+酸性氧化物直接成盐', () => {
+  const r = solveReaction(['Na2O', 'CO2'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['Na2CO3'])
+  assert.equal(r.reaction.type, '化合反应')
+})
+T('引擎 醋酸中和', () => {
+  const r = solveReaction(['CH3COOH', 'NaOH'])
+  assert.equal(r.ok, true)
+  assert(r.reaction.products.indexOf('CH3COONa') !== -1 && r.reaction.products.indexOf('H2O') !== -1)
+})
+T('反应库扩展后含新条目（铝热/醋酸/活泼金属与水）', () => {
+  const bank = ELEMENT_BANK
+  assert(bank.length >= 220, '反应库应 ≥220 条')
+  const has = (rs, ps) => bank.some(e => rs.every(f => e.r.indexOf(f) >= 0) && ps.every(f => e.p ? e.p.indexOf(f) >= 0 : false))
+  assert(has(['Al', 'Fe2O3'], ['Fe']))
+  assert(has(['CH3COOH', 'Na2CO3'], ['CO2']))
+  assert(has(['Ca', 'H2O'], ['Ca(OH)2']))
+  assert(has(['Na2O', 'CO2'], ['Na2CO3']))
 })
 
 // ---- 数据速查（reference.js） ----

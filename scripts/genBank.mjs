@@ -44,7 +44,21 @@ for (const mo of ['Na2O','K2O','CaO','BaO']) add([mo, 'H2O'])
 for (const ao of ['CO2','SO2','SO3','P2O5']) add([ao, 'H2O'])
 
 // 金属 + 酸（活动性顺序）
-for (const m of ['Mg','Al','Zn','Fe']) for (const a of ['HCl','H2SO4']) add([m, a])
+for (const m of ['K','Na','Ca','Mg','Al','Zn','Fe','Sn','Pb']) for (const a of ['HCl','H2SO4']) add([m, a])
+// 浓酸与金属的特殊氧化还原（引擎支持才收）
+add(['Cu','H2SO4']); add(['Fe','HNO3']); add(['Al','HNO3'])
+
+// 活泼金属 + 水
+add(['Na','H2O']); add(['K','H2O']); add(['Ca','H2O'])
+
+// 金属氧化物 + 酸性氧化物（成盐）
+add(['Na2O','CO2']); add(['CaO','CO2']); add(['CaO','SO2']); add(['K2O','CO2'])
+
+// 铝热与硅系高炉反应
+add(['Al','Fe2O3']); add(['SiO2','CaO']); add(['C','SiO2'])
+
+// 金属 + 氯气以外的卤素/氧族扩展
+add(['Na','O2']); add(['K','O2']); add(['P','Cl2']); add(['Li','Cl2']); add(['Ca','Cl2'])
 
 // 金属 + 盐（活动性）
 add(['Fe','CuSO4']); add(['Fe','CuCl2']); add(['Zn','CuSO4']); add(['Zn','AgNO3'])
@@ -65,7 +79,9 @@ for (const a of ['HCl','H2SO4','HNO3']) add([a, 'NH3'])
 // 酸 + 盐（生成气体/沉淀/水）
 add(['HCl','Na2CO3']); add(['HCl','CaCO3']); add(['HCl','NaHCO3']); add(['HCl','AgNO3'])
 add(['HCl','BaCO3']); add(['HCl','MgCO3'])
+add(['HCl','K2CO3']); add(['H2SO4','K2CO3']); add(['HNO3','K2CO3'])
 add(['H2SO4','Na2CO3']); add(['H2SO4','BaCl2']); add(['H2SO4','Ba(NO3)2']); add(['H2SO4','Na2SO3'])
+add(['H2SO4','MgCO3']); add(['HNO3','BaCO3'])
 add(['HNO3','Na2CO3']); add(['HNO3','CaCO3']); add(['HNO3','AgNO3'])
 
 // 碱 + 盐（沉淀）
@@ -73,12 +89,22 @@ add(['NaOH','CuSO4']); add(['NaOH','FeCl3']); add(['NaOH','FeCl2']); add(['NaOH'
 add(['NaOH','AlCl3']); add(['NaOH','ZnSO4']); add(['NaOH','CuCl2'])
 add(['Ca(OH)2','Na2CO3']); add(['Ba(OH)2','Na2SO4']); add(['Ba(OH)2','CuSO4'])
 add(['KOH','FeCl3']); add(['Ca(OH)2','CuSO4']); add(['Ca(OH)2','MgCl2'])
+add(['Ba(OH)2','Na2CO3']); add(['Ba(OH)2','CuCl2']); add(['Ba(OH)2','MgSO4'])
+// 铵盐 + 碱（加热放出氨气）
+add(['NaOH','NH4Cl']); add(['KOH','NH4Cl']); add(['Ca(OH)2','NH4Cl']); add(['Ca(OH)2','(NH4)2SO4'])
 
 // 盐 + 盐（沉淀）
 add(['NaCl','AgNO3']); add(['BaCl2','Na2SO4']); add(['BaCl2','K2SO4']); add(['BaCl2','MgSO4'])
 add(['Ba(NO3)2','Na2SO4']); add(['Ba(NO3)2','CuSO4']); add(['BaCl2','Na2CO3']); add(['BaCl2','AgNO3'])
 add(['CaCl2','Na2CO3']); add(['CaCl2','AgNO3']); add(['KCl','AgNO3']); add(['MgCl2','AgNO3'])
 add(['BaCl2','CuSO4']); add(['AgNO3','Na2CO3'])
+add(['Ca(NO3)2','Na2CO3']); add(['Ca(NO3)2','K2CO3']); add(['K2CO3','BaCl2'])
+add(['ZnCl2','AgNO3']); add(['CuCl2','AgNO3']); add(['FeCl3','AgNO3'])
+add(['CuSO4','Na2CO3']); add(['ZnSO4','Na2CO3']); add(['MgSO4','Na2CO3'])
+
+// 有机酸与碱的中和
+add(['CH3COOH','NaOH']); add(['CH3COOH','KOH']); add(['CH3COOH','Na2CO3'])
+add(['NaHCO3','NaOH'])
 
 // 还原性气体/碳 + 金属氧化物
 for (const mo of ['CuO','Fe2O3','Fe3O4','ZnO']) add(['H2', mo])

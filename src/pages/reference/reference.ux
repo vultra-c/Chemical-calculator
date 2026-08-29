@@ -1,7 +1,7 @@
 <!--
   化学工具箱 · 化学速查页（336×480，闪念小抄风格）
   金属活动性顺序 / 化合价 / 酸根 / 不溶物 / 相对原子质量 五组速查，
-  与常用物质表同款：分组标题 + 62px 卡片行 + top_fade 渐变遮罩 + 分块渲染。
+  与常用物质表同款：分组标题 + 62px 卡片行 + 分块渲染；遮罩由 hd.png 渐变承担。
   数据在 common/logic/reference.js（纯数据可单测，派生自 elements.js 常量）。
 -->
 <template>
@@ -22,8 +22,6 @@
       </list-item>
     </list>
 
-    <!-- 顶部渐变遮罩（不透明黑→透明，滚动内容在其下方渐隐） -->
-    <img static src="/common/images/top_fade.png" class="top-fade" />
 
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />

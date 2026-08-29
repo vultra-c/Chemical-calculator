@@ -4,7 +4,7 @@
   padding-top 102 全屏铺底）。
   「结果小数位」点击循环 1→2→3；「常亮显示/按键振动」点击开关并立即生效；
   常亮记忆：storage 持久化 + app.ux onCreate / 主页 onShow 重新应用。
-  5 行可滚动，按滚动页规范叠 top_fade 渐变遮罩。
+  5 行可滚动；hd.png 顶栏自身即渐变遮罩（原版设计），不叠额外遮罩层。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
@@ -19,8 +19,6 @@
       </list-item>
     </list>
 
-    <!-- 顶部渐变遮罩（可滚动列表） -->
-    <img static src="/common/images/top_fade.png" class="top-fade" />
 
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
