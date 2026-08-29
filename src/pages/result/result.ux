@@ -4,6 +4,10 @@
   性能要点：整条方程式（含系数与 Unicode 下标）在 JS 里拼成「一个字符串」，
   模板里只有一个 text 节点自动折行 —— 相比逐段多节点渲染大幅减少 VDOM 规模。
   主体全部 absolute 顶层挂载；mr-list 列表行静态 class + 显式行高 + div 包裹。
+
+  版面自适应：方程式卡片高度按折行估算分 6 档（l1/l1c/l2/l2c/l3/l3c），
+  短方程式收回卡片空间全部让给下方相对分子质量列表（原来固定 196，
+  列表只剩 74 高度）。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
@@ -11,17 +15,17 @@
     <!-- 无数据兜底 -->
     <text if="{{!valid}}" class="none-tip">未找到反应数据</text>
 
-    <!-- 方程式卡片（小抄深色大圆角卡片） -->
-    <div if="{{valid}}" class="eq-card">
-      <text class="eq-text">{{eqText}}</text>
+    <!-- 方程式卡片（小抄深色大圆角卡片，高度随折行数分档） -->
+    <div if="{{valid}}" class="eq-card {{cardVariant}}">
+      <text class="eq-text {{textVariant}}">{{eqText}}</text>
       <text if="{{condText}}" class="eq-cond">{{condText}}</text>
       <div class="eq-badge">
         <text class="eq-badge-t">{{rxnType}}</text>
       </div>
     </div>
 
-    <text if="{{valid}}" class="sec-label">相对分子质量 · 点按进入质量计算</text>
-    <list if="{{valid}}" class="mr-list">
+    <text if="{{valid}}" class="sec-label {{secVariant}}">相对分子质量 · 点按进入质量计算</text>
+    <list if="{{valid}}" class="mr-list {{listVariant}}">
       <list-item for="{{mrRows}}" tid="rid" type="mr" class="mr-row" @click="onPickMass($item)">
         <div class="mr-content">
           <text class="mr-f">{{$item.text}}</text>
@@ -58,7 +62,12 @@ export default {
     eqText: '',
     condText: '',
     rxnType: '',
-    mrRows: []
+    mrRows: [],
+    // 版面档位（l1/l1c/l2/l2c/l3/l3c）：行数 × 有无条件行
+    cardVariant: '',
+    textVariant: '',
+    secVariant: '',
+    listVariant: ''
   },
 
   onInit() {
@@ -87,6 +96,34 @@ export default {
     }
     this.mrRows = rows
     this.rxnType = r.type
+
+    this.applyLayout(text, !!this.condText)
+  },
+
+  /**
+   * 版面自适应：按 28px 粗体在 284px 行宽下的视觉宽度估算折行数（1-3），
+   * 结合有无条件行得到高度档位，卡片收紧、省下的空间全部让给下方列表。
+   */
+  applyLayout(text, hasCond) {
+    let units = 0
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]
+      const code = ch.charCodeAt(0)
+      if (ch === ' ') units += 0.32
+      else if (ch === '(' || ch === ')') units += 0.35
+      else if (ch === '+') units += 0.55
+      else if (ch === '=') units += 0.6
+      else if (code >= 65 && code <= 90) units += 0.68       // A-Z
+      else if (code >= 97 && code <= 122) units += 0.55     // a-z
+      else if (code >= 48 && code <= 57) units += 0.55      // 0-9
+      else units += 0.55                                     // Unicode 下标等
+    }
+    const lines = Math.max(1, Math.min(3, Math.ceil(units / 10)))
+    const lv = 'l' + lines + (hasCond ? 'c' : '')
+    this.cardVariant = 'eq-card-' + lv
+    this.textVariant = 'eq-text-' + lv
+    this.secVariant = 'sec-' + lv
+    this.listVariant = 'mr-list-' + lv
   },
 
   onPickMass(item) {
@@ -122,13 +159,12 @@ export default {
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* ---- 方程式卡片（小抄深色大圆角卡片，固定高 200） ---- */
+/* ---- 方程式卡片（小抄深色大圆角卡片，高度随折行数分档） ---- */
 .eq-card {
   position: absolute;
   left: 6px;
   top: 108px;
   width: 324px;
-  height: 196px;
   border-radius: 36px;
   background-color: #262626;
   padding: 14px 20px;
@@ -142,7 +178,6 @@ export default {
   font-weight: bold;
   color: #ffffff;
   text-align: center;
-  lines: 3;
   text-overflow: ellipsis;
 }
 .eq-cond {
@@ -163,23 +198,45 @@ export default {
   color: #4da3ff;
 }
 
+/* 卡片六档高度：内边距 28 + 行数 * 40 + 条件行 30 + 徽标块约 34 */
+.eq-card-l1  { height: 102px; }
+.eq-card-l1c { height: 132px; }
+.eq-card-l2  { height: 142px; }
+.eq-card-l2c { height: 172px; }
+.eq-card-l3  { height: 182px; }
+.eq-card-l3c { height: 212px; }
+.eq-text-l1,  .eq-text-l1c { lines: 1; }
+.eq-text-l2,  .eq-text-l2c { lines: 2; }
+.eq-text-l3,  .eq-text-l3c { lines: 3; }
+
 .sec-label {
   position: absolute;
   left: 16px;
-  top: 310px;
   width: 304px;
   font-size: 20px;
   line-height: 24px;
   color: rgba(255, 255, 255, 0.45);
 }
+/* 标签顶 = 卡片底(108+卡高) + 6 */
+.sec-l1  { top: 216px; }
+.sec-l1c { top: 246px; }
+.sec-l2  { top: 256px; }
+.sec-l2c { top: 286px; }
+.sec-l3  { top: 296px; }
+.sec-l3c { top: 326px; }
 
 .mr-list {
   position: absolute;
   left: 6px;
-  top: 338px;
   width: 324px;
-  height: 74px;
 }
+/* 列表：顶部贴标签(标签顶+28)，底边止于 412（按钮 418 上留 6） */
+.mr-list-l1  { top: 244px; height: 168px; }
+.mr-list-l1c { top: 274px; height: 138px; }
+.mr-list-l2  { top: 284px; height: 128px; }
+.mr-list-l2c { top: 314px; height: 98px; }
+.mr-list-l3  { top: 324px; height: 88px; }
+.mr-list-l3c { top: 354px; height: 58px; }
 /* list-item：静态 class + 显式行高/间距，内容内层 div 包裹 */
 .mr-row {
   width: 100%;

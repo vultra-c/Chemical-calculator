@@ -31,9 +31,25 @@ const AO_ANION = { CO2: 'CO3', SO2: 'SO3', SO3: 'SO4', P2O5: 'PO4' }
 const MO_WATER = { CaO: 'Ca(OH)2', BaO: 'Ba(OH)2', Na2O: 'NaOH', K2O: 'KOH' }
 
 /**
+ * 分类结果缓存：classify 内部含 parseFormula + 多组正则，
+ * solveReaction 一次推导会对同一物质重复分类（rs.map + 各规则段），缓存去重。
+ */
+const CLASSIFY_CACHE = new Map()
+const CLASSIFY_CACHE_MAX = 256
+
+/**
  * 物质分类
  */
 export function classify(formula) {
+  const hit = CLASSIFY_CACHE.get(formula)
+  if (hit !== undefined) return hit
+  const result = classifyImpl(formula)
+  if (CLASSIFY_CACHE.size >= CLASSIFY_CACHE_MAX) CLASSIFY_CACHE.clear()
+  CLASSIFY_CACHE.set(formula, result)
+  return result
+}
+
+function classifyImpl(formula) {
   if (formula === 'H2O') return 'water'
   if (formula === 'CO') return 'co'
   if (formula === 'H2O2') return 'h2o2'
@@ -373,7 +389,8 @@ export function solveReaction(reactantFormulas) {
       if (AO_WATER[other]) {
         return assemble([other, 'H2O'], [AO_WATER[other]], '化合反应', '')
       }
-      if (classify(other) === 'mo' || classify(other) === 'ao') {
+      const ocat = classify(other)
+      if (ocat === 'mo' || ocat === 'ao') {
         return { ok: false, error: other + ' 不与水发生反应' }
       }
     }

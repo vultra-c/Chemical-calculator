@@ -6,6 +6,15 @@
 import { ATOMIC_MASSES } from './elements.js'
 
 /**
+ * 解析结果缓存：同一化学式会被 classify/saltIons/baseIons/molarMass 等
+ * 多次重复解析（一次 solveReaction 链路同式可达 3-5 次），解析是正则+栈扫描，
+ * 在手表低功耗 CPU 上是主要耗时点。缓存后重复调用退化为 Map 查表。
+ * 结果对象只读共享（全库无 counts/segs 原地修改），超出上限整表清空即可。
+ */
+const PARSE_CACHE = new Map()
+const PARSE_CACHE_MAX = 512
+
+/**
  * 解析化学式
  * @param {string} f 化学式，如 Cu2(OH)2CO3 / Fe3O4 / H2O
  * @returns {{ok:boolean, error?:string, counts?:Object, segs?:Array}}
@@ -15,6 +24,15 @@ import { ATOMIC_MASSES } from './elements.js'
 export function parseFormula(f) {
   const s = String(f || '').trim()
   if (!s) return { ok: false, error: '化学式为空' }
+  const hit = PARSE_CACHE.get(s)
+  if (hit) return hit
+  const result = parseFormulaImpl(s)
+  if (PARSE_CACHE.size >= PARSE_CACHE_MAX) PARSE_CACHE.clear()
+  PARSE_CACHE.set(s, result)
+  return result
+}
+
+function parseFormulaImpl(s) {
 
   const counts = {}
   const segs = []

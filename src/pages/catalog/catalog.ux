@@ -5,12 +5,19 @@
   - list-item 声明静态 class + 显式高度/间距，内容统一用内层 div 包裹
   - 同 type 的 list-item DOM 结构完全一致，禁止内部 if 混用
   - for 变量 $item，tid 唯一
+
+  与主页同款顶部过渡：list 全屏铺底 + padding-top 102（主页 .list 同款），
+  再叠 top_fade.png（上不透明→下透明）渐变遮罩——滑动时卡片在顶栏下沿渐隐，
+  不再是 y=102 硬截断；分组标题行(type=title)用蓝色小字与卡片行区分。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
-    <!-- 列表（absolute 顶层挂载，分块加载） -->
+    <!-- 列表（全屏铺底 + 顶部 padding，分块加载） -->
     <list class="cat-list" if="{{visibleRows.length > 0}}" onscrollbottom="onReachBottom">
-      <list-item for="{{visibleRows}}" tid="rid" type="row" class="cat-item" @click="onRowClick($item)">
+      <list-item for="{{visibleRows}}" if="{{$item.kind === 'title'}}" tid="rid" type="title" class="cat-title-item">
+        <text class="cat-title">{{$item.main}}</text>
+      </list-item>
+      <list-item for="{{visibleRows}}" if="{{$item.kind === 'item'}}" tid="rid" type="row" class="cat-item" @click="onRowClick($item)">
         <div class="cat-content">
           <text class="cat-main">{{$item.main}}</text>
           <text class="cat-sub">{{$item.sub}}</text>
@@ -22,6 +29,9 @@
         </div>
       </list-item>
     </list>
+
+    <!-- 顶部渐变遮罩（不透明黑→透明，滚动内容在其下方渐隐） -->
+    <img static src="/common/images/top_fade.png" class="top-fade" />
 
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
@@ -98,14 +108,39 @@ export default {
 <style>
 @import '../../common/style.css';
 
-/* 列表：absolute 顶层挂载，显式宽高（顶栏 102px 之下） */
+/* 列表：全屏铺底 + 顶部 padding（与主页 .list 同款），滑动内容隐入顶部遮罩 */
 .cat-list {
   position: absolute;
   left: 0px;
-  top: 102px;
+  top: 0px;
   width: 336px;
-  height: 378px;
-  padding: 0px 6px;
+  height: 480px;
+  padding: 102px 6px 8px;
+}
+
+/* 顶部渐变遮罩：上不透明黑→下透明（0..77 不透、78..100 渐隐） */
+.top-fade {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 336px;
+  height: 101px;
+}
+
+/* 分组标题行：蓝色小字、无卡片底，与物质卡片行拉开层级 */
+.cat-title-item {
+  width: 100%;
+  height: 40px;
+  padding: 0 22px;
+  margin-bottom: 4px;
+  justify-content: center;
+}
+.cat-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #4da3ff;
+  lines: 1;
+  text-overflow: ellipsis;
 }
 
 /* list-item：小抄深色卡片风；静态 class + 显式行高/间距，内容内层 div 包裹 */
