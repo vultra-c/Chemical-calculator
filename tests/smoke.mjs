@@ -360,6 +360,19 @@ T('速查 化合价与根价口诀齐备', () => {
   const a = REFERENCE_SECTIONS.find(s => s.title === '常见根 / 酸根化合价')
   assert(a.rows[0].main === '根价口诀' && a.rows[0].sub.indexOf('正一价的是铵根') !== -1)
 })
+T('速查/常量 全 ASCII 无 Unicode 上标（手表字体缺字）', async () => {
+  const { CONSTANTS } = await import('../src/common/logic/constants.js')
+  // 禁止上标字符（²³¹ 与 U+2070-207F：⁰⁴⁵⁶⁷⁸⁹⁺⁻ 等）；下标 U+2080+ 已验证可显示，允许
+  const banned = /[\u00B2\u00B3\u00B9\u2070-\u207F]/
+  const rows = flattenReference()
+  for (const r of rows) {
+    assert(!banned.test(r.main + r.sub), '速查行含 Unicode 上标: ' + r.main)
+  }
+  for (const c of CONSTANTS) {
+    assert(!banned.test(c.name + c.value + c.note), '常量含 Unicode 上标: ' + c.name)
+  }
+})
+
 T('速查 颜色与气体分组内容', () => {
   const c = REFERENCE_SECTIONS.find(s => s.title === '常见物质颜色')
   const ct = c.rows.map(r => r.main + r.sub).join(' ')

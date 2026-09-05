@@ -121,9 +121,9 @@ const COLOR_ROWS = [
   { main: '白色沉淀（不溶于稀酸）', sub: 'BaSO₄、AgCl' },
   { main: '白色沉淀（溶于酸并放气）', sub: 'CaCO₃、BaCO₃、MgCO₃' },
   { main: '白色沉淀（溶于酸不放气）', sub: 'Mg(OH)₂、Al(OH)₃、Zn(OH)₂' },
-  { main: '蓝色溶液', sub: '含 Cu²⁺：CuSO₄、CuCl₂、Cu(NO₃)₂' },
-  { main: '浅绿色溶液', sub: '含 Fe²⁺：FeSO₄、FeCl₂' },
-  { main: '黄色溶液', sub: '含 Fe³⁺：FeCl₃、Fe₂(SO₄)₃' },
+  { main: '蓝色溶液', sub: '含 Cu2+：CuSO₄、CuCl₂、Cu(NO₃)₂' },
+  { main: '浅绿色溶液', sub: '含 Fe2+：FeSO₄、FeCl₂' },
+  { main: '黄色溶液', sub: '含 Fe3+：FeCl₃、Fe₂(SO₄)₃' },
   { main: '高锰酸钾溶液', sub: '紫红色' }
 ]
 

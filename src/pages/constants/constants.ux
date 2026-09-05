@@ -87,8 +87,8 @@ export default {
   margin-top: 2px;
 }
 .const-note {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.62);
   lines: 1;
   margin-top: 2px;
 }
