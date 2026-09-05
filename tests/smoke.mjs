@@ -340,6 +340,23 @@ T('速查 flattenReference 行流带标题行', () => {
   assert(rows.length > 200)
   assert.equal(cnName('Fe'), '铁')
 })
+T('速查 离子符号带 ASCII 电荷与读法提示', () => {
+  // 手表字体可能缺 Unicode 上标字形：sub 必须给出可直接读的「3+/2-」ASCII 形式
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '常见离子符号')
+  const subs = sec.rows.map(r => r.sub).join(' ')
+  assert(subs.indexOf('电荷 3+') !== -1, '应含 3+ 电荷文本（三加）')
+  assert(subs.indexOf('电荷 2-') !== -1, '应含 2- 电荷文本（二减）')
+  const last = sec.rows[sec.rows.length - 1]
+  assert(last.main === '读法提示' && last.sub.indexOf('3+ 读三加') !== -1)
+})
+T('速查 化合价与根价口诀齐备', () => {
+  const c = REFERENCE_SECTIONS.find(s => s.title === '常见元素化合价')
+  assert(c.rows[0].main.indexOf('化合价口诀') !== -1)
+  const ct = c.rows.map(r => r.main + r.sub).join(' ')
+  assert(ct.indexOf('一价氢氯钾钠银') !== -1 && ct.indexOf('铜汞二价最常见') !== -1)
+  const a = REFERENCE_SECTIONS.find(s => s.title === '常见根 / 酸根化合价')
+  assert(a.rows[0].main === '根价口诀' && a.rows[0].sub.indexOf('正一价的是铵根') !== -1)
+})
 T('速查 颜色与气体分组内容', () => {
   const c = REFERENCE_SECTIONS.find(s => s.title === '常见物质颜色')
   const ct = c.rows.map(r => r.main + r.sub).join(' ')
@@ -499,6 +516,15 @@ T('考纲 酸碱盐（下册 U10/U11）', () => {
 T('考纲 冶炼钨（九下金属冶炼扩展）', () => {
   eq(['H2', 'WO3'], ['W', 'H2O'])
   eq(['CO', 'WO3'], ['W', 'CO2'])
+})
+
+T('电荷文本 chargeText 转换', async () => {
+  const { chargeText } = await import('../src/common/logic/fmt.js')
+  assert.equal(chargeText('+3'), '3+')
+  assert.equal(chargeText('-2'), '2-')
+  assert.equal(chargeText('+1'), '+')
+  assert.equal(chargeText('-1'), '-')
+  assert.equal(chargeText(''), '')
 })
 
 T('反应库收录不充分燃烧与浓硫酸', () => {

@@ -5,7 +5,7 @@
  */
 import { ATOMIC_MASSES, ACTIVITY, CATION_CHARGE, ANIONS, INSOLUBLE, ELEMENT_Z, ION_TABLE } from './elements.js'
 import { ELEMENT_CN } from './elementQuery.js'
-import { formulaToText, ionText } from './fmt.js'
+import { formulaToText, ionText, chargeText } from './fmt.js'
 import { formulaName } from './substances.js'
 
 const REV_CN = {}
@@ -48,18 +48,24 @@ function periodicRows() {
   return rows
 }
 
-/** 常见离子符号（阳离子在前、阴离子随后；电荷上标展示） */
+/** 常见离子符号（阳离子在前、阴离子随后；右上标 + 右下电荷纯文本双展示） */
 function ionRows() {
-  return ION_TABLE.map(it => ({
+  const rows = ION_TABLE.map(it => ({
     main: it.name + ' ' + ionText(it.f, it.q),
-    sub: ''
+    sub: '电荷 ' + chargeText(it.q)
   }))
+  // 读法说明行（零基础考点：离子右上标数字在前符号在后，读作"几加/几减"）
+  rows.push({ main: '读法提示', sub: '右上标数字在前：3+ 读三加、2- 读二减，1 省略不写' })
+  return rows
 }
 
 function cationRows() {
   // 中学常见顺序：+1 → +2 → +3，最后铁变价单独说明
   const order = ['K', 'Na', 'Ag', 'NH4', 'H', 'Ca', 'Ba', 'Mg', 'Zn', 'Cu', 'Hg', 'Sn', 'Pb', 'Al']
-  const rows = []
+  const rows = [
+    { main: '化合价口诀 上', sub: '一价氢氯钾钠银 二价氧钙钡镁锌' },
+    { main: '化合价口诀 下', sub: '三铝四硅五价磷 二三铁 二四碳 二四六硫 铜汞二价最常见' }
+  ]
   for (let i = 0; i < order.length; i++) {
     const s = order[i]
     if (!CATION_CHARGE[s]) continue
@@ -72,7 +78,9 @@ function cationRows() {
 }
 
 function anionRows() {
-  const rows = []
+  const rows = [
+    { main: '根价口诀', sub: '负一硝酸氢氧根 负二硫酸碳酸根 负三只有磷酸根 正一价的是铵根' }
+  ]
   for (const id in ANIONS) {
     const a = ANIONS[id]
     rows.push({ main: ANION_NAME[id] + ' ' + formulaToText(a.label), sub: '-' + a.charge })

@@ -30,6 +30,20 @@ export function ionText(f, q) {
   return s
 }
 
+/**
+ * 离子电荷纯文本（ASCII，数字在前、符号在后，初中规范写法，读作"几加/几减"）。
+ * 部分手表字体不含 Unicode 上标字形，用本函数给出可读备份：
+ * chargeText('+3') → '3+'（三加），chargeText('-2') → '2-'（二减），'+1' → '+'，'-1' → '-'
+ */
+export function chargeText(q) {
+  if (!q) return ''
+  const charge = String(q)
+  const sign = charge[0]
+  let num = charge.slice(1)
+  if (num === '1') num = ''
+  return num + sign
+}
+
 /** 系数 + 分段 → 展示文本，如 2CuO（数字转 Unicode 下标） */
 export function segsToText(segs, coef) {
   let s = ''

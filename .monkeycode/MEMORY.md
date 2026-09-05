@@ -26,12 +26,15 @@ This file records user instructions, preferences, and teachings for reference in
 
 ## Entries
 
-[Git 提交与认证方式]
-- Date: 2026-08-28
-- Context: 用户交接 Chemical-calculator 项目时提供
+[Git 提交与认证方式 / 推送授权]
+- Date: 2026-08-28（2026-09-05 修订：用户明确长期授权推送）
+- Context: 用户交接 Chemical-calculator 项目时提供；2026-09-05 用户指令"确认,以后都推送"
 - Instructions:
   - 仓库地址: github.com/vultra-c/Chemical-calculator,默认分支 main
-  - 提交/推送代码使用用户在对话中提供的 GitHub personal access token(以 x-access-token 方式拼入 push URL 使用)
+  - 用户长期授权:每次开发完成并验证（测试+构建）通过后,直接 commit 并 push 到 main,不再逐次询问
+  - 提交信息风格跟随历史:中文、概括主要改动、多行明细（参考 0199b5e / 0c3ea9b）
+  - 推送前检查: node tests/smoke.mjs 全过 + npm run release 构建成功 + verify-rpk 通过
+  - 提交/推送代码使用用户在对话中提供的 GitHub personal access token(以 x-access-token 方式拼入 push URL 使用);当前环境 credential helper 已可取凭据,直接用 git push 即可
   - token 本身属于敏感凭据:不得写入仓库任何文件、不得随提交进入历史、不得在回复中展示,仅在命令中临时引用
   - 用户提到 token 直接粘贴在对话中,若担心泄露应提醒用户可轮换
 
