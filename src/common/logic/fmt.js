@@ -8,26 +8,8 @@ import { parseFormula } from './parser.js'
 /** 数字 → Unicode 下标映射 */
 const SUB = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' }
 
-/** 数字/符号 → Unicode 上标映射（离子电荷展示用） */
-const SUP = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻' }
-
 export function subDigit(num) {
   return String(num).split('').map(c => SUB[c] || c).join('')
-}
-
-/**
- * 离子符号展示文本：化学式内数字转下标，电荷转上标。
- * 如 ionText('NH4','+1') → 'NH₄⁺'，ionText('SO4','-2') → 'SO₄²⁻'，ionText('Fe','+3') → 'Fe³⁺'
- */
-export function ionText(f, q) {
-  let s = String(f).split('').map(c => (c >= '0' && c <= '9') ? SUB[c] : c).join('')
-  if (!q) return s
-  const charge = String(q)
-  const sign = charge[0]
-  let num = charge.slice(1)
-  if (num === '1') num = ''
-  s += num.split('').map(c => SUP[c] || c).join('') + (SUP[sign] || sign)
-  return s
 }
 
 /**

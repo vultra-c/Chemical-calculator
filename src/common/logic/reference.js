@@ -5,7 +5,7 @@
  */
 import { ATOMIC_MASSES, ACTIVITY, CATION_CHARGE, ANIONS, INSOLUBLE, ELEMENT_Z, ION_TABLE } from './elements.js'
 import { ELEMENT_CN } from './elementQuery.js'
-import { formulaToText, ionText, chargeText } from './fmt.js'
+import { formulaToText, chargeText } from './fmt.js'
 import { formulaName } from './substances.js'
 
 const REV_CN = {}
@@ -48,12 +48,23 @@ function periodicRows() {
   return rows
 }
 
-/** 常见离子符号（阳离子在前、阴离子随后；右上标 + 右下电荷纯文本双展示） */
+/** 电荷 ASCII → 汉字读法（离子右上标口语，如 3+ 三加、2- 二减） */
+const CHARGE_READING = { '+': '一加', '-': '一减', '2+': '二加', '3+': '三加', '2-': '二减', '3-': '三减' }
+
+/**
+ * 常见离子符号（阳离子在前、阴离子随后）。
+ * 真机字体缺 Unicode 上标字形（³⁺ 显示为空白/豆腐），
+ * 展示一律 ASCII：化学式原样保留角标数字（SO4、NH4），电荷与读法放副行。
+ */
 function ionRows() {
-  const rows = ION_TABLE.map(it => ({
-    main: it.name + ' ' + ionText(it.f, it.q),
-    sub: '电荷 ' + chargeText(it.q)
-  }))
+  const rows = ION_TABLE.map(it => {
+    const c = chargeText(it.q)
+    const reading = CHARGE_READING[c] || c
+    return {
+      main: it.name + ' ' + it.f,
+      sub: '电荷 ' + c + '（读作 ' + reading + '）'
+    }
+  })
   // 读法说明行（零基础考点：离子右上标数字在前符号在后，读作"几加/几减"）
   rows.push({ main: '读法提示', sub: '右上标数字在前：3+ 读三加、2- 读二减，1 省略不写' })
   return rows

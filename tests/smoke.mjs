@@ -298,16 +298,18 @@ T('速查 原子质量 118 元素成对成行', () => {
   assert(sec.rows[0].sub.indexOf('氦 He') !== -1)
   assert(sec.rows[58].main.indexOf(' Ts ') !== -1 || sec.rows[58].main.indexOf('Ts') !== -1)
 })
-T('速查 离子符号表含 Na⁺ 与 SO₄²⁻', () => {
+T('速查 离子符号表全 ASCII 展示（手表字体无 Unicode 上标）', () => {
   const sec = REFERENCE_SECTIONS.find(s => s.title === '常见离子符号')
   assert(sec.rows.length >= 30)
-  const t = sec.rows.map(r => r.main).join(' ')
-  assert(t.indexOf('钠离子 Na⁺') !== -1)
-  assert(t.indexOf('硫酸根离子 SO₄²⁻') !== -1)
-  assert(t.indexOf('铁离子 Fe³⁺') !== -1)
-  assert(t.indexOf('亚铁离子 Fe²⁺') !== -1)
-  assert(t.indexOf('铵根离子 NH₄⁺') !== -1)
-  assert(t.indexOf('碳酸氢根离子 HCO₃⁻') !== -1)
+  const mains = sec.rows.map(r => r.main).join(' ')
+  assert(mains.indexOf('钠离子 Na') !== -1)
+  assert(mains.indexOf('硫酸根离子 SO4') !== -1)
+  assert(mains.indexOf('铁离子 Fe') !== -1)
+  assert(mains.indexOf('亚铁离子 Fe') !== -1)
+  assert(mains.indexOf('铵根离子 NH4') !== -1)
+  assert(mains.indexOf('碳酸氢根离子 HCO3') !== -1)
+  // 离子行不得依赖 Unicode 上标/下标字形（真机缺失则显示空白/豆腐块）
+  assert(!/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₀₁₂₃₄₅₆₇₈₉]/.test(mains), '离子主行必须全 ASCII')
 })
 T('速查 活动性三行序列', () => {
   const sec = REFERENCE_SECTIONS.find(s => s.title === '金属活动性顺序')
@@ -341,11 +343,12 @@ T('速查 flattenReference 行流带标题行', () => {
   assert.equal(cnName('Fe'), '铁')
 })
 T('速查 离子符号带 ASCII 电荷与读法提示', () => {
-  // 手表字体可能缺 Unicode 上标字形：sub 必须给出可直接读的「3+/2-」ASCII 形式
+  // 手表字体缺 Unicode 上标字形：sub 必须给出可直接读的「3+/2-」ASCII 与汉字读法
   const sec = REFERENCE_SECTIONS.find(s => s.title === '常见离子符号')
   const subs = sec.rows.map(r => r.sub).join(' ')
-  assert(subs.indexOf('电荷 3+') !== -1, '应含 3+ 电荷文本（三加）')
-  assert(subs.indexOf('电荷 2-') !== -1, '应含 2- 电荷文本（二减）')
+  assert(subs.indexOf('电荷 3+（读作 三加）') !== -1, '应含 3+（读作 三加）')
+  assert(subs.indexOf('电荷 2-（读作 二减）') !== -1, '应含 2-（读作 二减）')
+  assert(subs.indexOf('电荷 +（读作 一加）') !== -1, '应含 +（读作 一加）')
   const last = sec.rows[sec.rows.length - 1]
   assert(last.main === '读法提示' && last.sub.indexOf('3+ 读三加') !== -1)
 })

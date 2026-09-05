@@ -126,11 +126,14 @@ export default {
   lines: 1;
   text-overflow: ellipsis;
 }
+/* 副行是并列数据列（偶数序元素/原子量/电荷读法），不是注释：
+ * 亮度必须与主行接近，否则手表 OLED 上整列不可见（曾误判"只显示单数元素"） */
 .cat-sub {
   width: 100%;
-  font-size: 17px;
-  line-height: 22px;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 19px;
+  line-height: 23px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.78);
   lines: 1;
   text-overflow: ellipsis;
 }
