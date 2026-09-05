@@ -56,6 +56,19 @@ This file records user instructions, preferences, and teachings for reference in
   - 同类 CSS 限制: 不支持后代选择器(.a .b),构建期告警「Selector type unsupport Descendant Selector」,样式静默失效
   - 完整 UI 规范已固化在仓库根目录 VELA_UI_SKILL.md,新页面开发先读它
 
+[Vela 列表滑动性能：splice 增量追加优于 concat；方程式文本懒计算]
+- Date: 2026-09-05
+- Context: Discovered by Agent while 优化化学工具箱列表滑动卡顿（V26.9.47）
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - 长列表 onscrollbottom 追加用 `this.rows.splice(this.rows.length, 0, ...more)`，
+    不用 `this.rows = this.rows.concat(more)`：concat 生新数组整表 diff，splice 只增量挂新行
+  - 大结果集（元素/合成查询 50 条）先建占位行（text:'')，仅首屏块立即 equationText 解析，
+    追加时再补该块；搜索按钮链路不再被几十次 parseFormula 占住
+  - 键盘横滑 progress：percent 变化 <2 不回写，滚动事件高频下 progress 不重绘
+  - elementBank.js 由 scripts/genBank.mjs 生成，改引擎后必须 `node scripts/genBank.mjs > src/common/logic/elementBank.js`
+  - 词库由 scripts/gen_chem_dict.py 生成（先装 pypinyin），改 NAME_MAP/元素后重跑
+
 [滚动页顶部渐隐：hd.png 自身即遮罩，禁止额外叠层]
 - Date: 2026-08-29（20-08 修订：此前「top_fade 规格」条目结论错误，以本条为准）
 - Context: 用户多次反馈遮罩消失/位置错误/像多加一层；最终用户指认弦电子书仓库 e2e 原版

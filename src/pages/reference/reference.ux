@@ -26,7 +26,7 @@
     <!-- 顶栏（闪念小抄同款） -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
-    <text static class="hd-sub">活动性 · 化合价 · 原子量</text>
+    <text static class="hd-sub">周期表 · 化合价 · 离子 · 颜色</text>
     <text static class="hd-title">化学速查</text>
   </div>
 </template>
@@ -35,9 +35,10 @@
 import router from '@system.router'
 import { flattenReference } from '../../common/logic/reference.js'
 
-// 全量行流（约 90 行）一次性构建（同步）；显示分块加载避免首屏卡顿
+// 全量行流一次性构建（同步）；显示分块加载避免首屏卡顿。
+// 周期表/原子量补全后行数上探 ~270，首块放大到 24 保持「一滑一屏」节奏。
 const ALL_ROWS = flattenReference()
-const CHUNK = 20
+const CHUNK = 24
 
 export default {
   private: {
@@ -56,7 +57,8 @@ export default {
   onReachBottom() {
     if (!this.hasMore) return
     const end = Math.min(this.renderPos + CHUNK, ALL_ROWS.length)
-    this.visibleRows = this.visibleRows.concat(ALL_ROWS.slice(this.renderPos, end))
+    // splice 增量挂载追加块：不重建整表数组，list 只追加渲染新行，滚动不整列 diff
+    this.visibleRows.splice(this.visibleRows.length, 0, ...ALL_ROWS.slice(this.renderPos, end))
     this.renderPos = end
     this.hasMore = this.renderPos < ALL_ROWS.length
   },

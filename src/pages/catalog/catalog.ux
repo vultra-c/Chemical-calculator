@@ -81,7 +81,8 @@ export default {
   onReachBottom() {
     if (!this.hasMore) return
     const end = Math.min(this.renderPos + CHUNK, this.total)
-    this.visibleRows = this.visibleRows.concat(ALL_ROWS.slice(this.renderPos, end))
+    // splice 增量挂载追加块：不重建整表数组，list 只追加渲染新行，滚动不整列 diff
+    this.visibleRows.splice(this.visibleRows.length, 0, ...ALL_ROWS.slice(this.renderPos, end))
     this.renderPos = end
     this.hasMore = this.renderPos < this.total
   },

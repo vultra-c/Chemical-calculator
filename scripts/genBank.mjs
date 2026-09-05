@@ -64,12 +64,14 @@ add(['Na','O2']); add(['K','O2']); add(['P','Cl2']); add(['Li','Cl2']); add(['Ca
 add(['Fe','CuSO4']); add(['Fe','CuCl2']); add(['Zn','CuSO4']); add(['Zn','AgNO3'])
 add(['Cu','AgNO3']); add(['Cu','Hg(NO3)2']); add(['Zn','FeSO4']); add(['Fe','AgNO3'])
 add(['Mg','CuSO4']); add(['Al','CuSO4']); add(['Zn','CuCl2']); add(['Al','AgNO3'])
+add(['Mg','FeSO4']); add(['Zn','Cu(NO3)2']); add(['Fe','Cu(NO3)2'])
 
 // 碱性氧化物 + 酸
 for (const mo of ['CaO','CuO','Fe2O3','Al2O3','ZnO','MgO','Na2O']) for (const a of ['HCl','H2SO4']) add([mo, a])
 
 // 酸性氧化物 + 碱
 for (const ao of ['CO2','SO2','SO3']) for (const b of ['NaOH','Ca(OH)2','KOH']) add([ao, b])
+add(['CO2','Ba(OH)2']); add(['SO2','Ca(OH)2']); add(['SO3','Ca(OH)2'])
 
 // 酸 + 碱（中和）
 for (const a of ['HCl','H2SO4','HNO3']) for (const b of ['NaOH','KOH','Ca(OH)2','Ba(OH)2','Al(OH)3','Fe(OH)3','Cu(OH)2','Mg(OH)2']) add([a, b])
@@ -83,6 +85,7 @@ add(['HCl','K2CO3']); add(['H2SO4','K2CO3']); add(['HNO3','K2CO3'])
 add(['H2SO4','Na2CO3']); add(['H2SO4','BaCl2']); add(['H2SO4','Ba(NO3)2']); add(['H2SO4','Na2SO3'])
 add(['H2SO4','MgCO3']); add(['HNO3','BaCO3'])
 add(['HNO3','Na2CO3']); add(['HNO3','CaCO3']); add(['HNO3','AgNO3'])
+add(['HNO3','NaHCO3']); add(['HCl','Ca(HCO3)2']); add(['HCl','Na2SO3'])
 
 // 碱 + 盐（沉淀）
 add(['NaOH','CuSO4']); add(['NaOH','FeCl3']); add(['NaOH','FeCl2']); add(['NaOH','MgSO4'])
@@ -92,6 +95,9 @@ add(['KOH','FeCl3']); add(['Ca(OH)2','CuSO4']); add(['Ca(OH)2','MgCl2'])
 add(['Ba(OH)2','Na2CO3']); add(['Ba(OH)2','CuCl2']); add(['Ba(OH)2','MgSO4'])
 // 铵盐 + 碱（加热放出氨气）
 add(['NaOH','NH4Cl']); add(['KOH','NH4Cl']); add(['Ca(OH)2','NH4Cl']); add(['Ca(OH)2','(NH4)2SO4'])
+add(['NH4NO3','NaOH']); add(['NH4HCO3','NaOH']); add(['Ca(OH)2','NH4HCO3'])
+// 双沉淀（Ba(OH)2 + CuSO4 → BaSO4↓ + Cu(OH)2↓）
+add(['Ba(OH)2','CuSO4']); add(['Ba(OH)2','(NH4)2SO4'])
 
 // 盐 + 盐（沉淀）
 add(['NaCl','AgNO3']); add(['BaCl2','Na2SO4']); add(['BaCl2','K2SO4']); add(['BaCl2','MgSO4'])
@@ -112,6 +118,10 @@ for (const mo of ['CuO','Fe2O3','Fe3O4','ZnO','MgO','Al2O3','PbO']) add(['CO', m
 for (const mo of ['CuO','Fe2O3','Fe3O4','ZnO','PbO']) add(['C', mo])
 add(['CO','Fe2O3']); add(['C','CO2']); add(['C','H2O']); add(['Mg','CO2']); add(['Mg','N2'])
 add(['Fe','H2O']); add(['Na2O2','H2O']); add(['Na2O2','CO2'])
+// 人教版九年级补充：CO 还原 CuO（加热）、H2/CO 冶炼钨（高温）
+add(['CO','CuO']); add(['H2','WO3']); add(['CO','WO3'])
+// 碳酸铵受热分解
+add(['(NH4)2CO3'])
 
 // 有机物燃烧
 for (const o of ORGANICS) add([o, 'O2'])
@@ -119,32 +129,39 @@ for (const o of ORGANICS) add([o, 'O2'])
 // 三元
 add(['CO2','H2O','CaCO3']); add(['CO2','H2O','Na2CO3']); add(['CO2','H2O','Ca(OH)2']); add(['CO2','NaOH','Ca(OH)2'])
 
+/**
+ * 手工条目：引擎默认路径给不出但课程标准必须收录的反应。
+ * 1) 碳不充分燃烧：引擎 C+O2 默认走完全燃烧（更常用），不充分燃烧仅收录进反应库。
+ * 2) Cu 与浓硫酸：引擎规则只允许盐酸/稀硫酸置换，这里按浓硫酸氧化还原收录。
+ */
+const EXTRA = [
+  { r: ['C', 'O2'], p: ['CO'], c: [2, 1, 2], t: '氧化反应（不充分燃烧）', n: '氧气不足（点燃）' },
+  { r: ['Cu', 'H2SO4'], p: ['CuSO4', 'SO2', 'H2O'], c: [1, 2, 1, 1, 2], t: '氧化还原反应', n: '加热（浓硫酸）' }
+]
+
 // ---- 执行 ----
 const seen = new Set()
 const bank = []
-for (const combo of combos) {
-  const res = solveReaction(combo)
-  if (!res.ok || !res.reaction) continue
-  const r = res.reaction
-  const key = r.reactants.slice().sort().join('+') + '=' + r.products.slice().sort().join('+')
-  if (seen.has(key)) continue
+function pushEntry(r, p, c, t, n) {
+  const key = r.slice().sort().join('+') + '=' + p.slice().sort().join('+')
+  if (seen.has(key)) return
   seen.add(key)
   // 元素集合
   const elemSet = new Set()
-  for (const f of r.reactants.concat(r.products)) {
+  for (const f of r.concat(p)) {
     const pr = parseFormula(f)
     if (pr.ok) for (const k of Object.keys(pr.counts)) elemSet.add(k)
   }
   const elems = Array.from(elemSet).sort().join(' ')
-  bank.push({
-    r: r.reactants,
-    p: r.products,
-    c: r.coefs,
-    t: r.type,
-    n: r.cond || '',
-    e: elems
-  })
+  bank.push({ r, p, c, t, n: n || '', e: elems })
 }
+for (const combo of combos) {
+  const res = solveReaction(combo)
+  if (!res.ok || !res.reaction) continue
+  const r = res.reaction
+  pushEntry(r.reactants, r.products, r.coefs, r.type, r.cond)
+}
+for (const e of EXTRA) pushEntry(e.r, e.p, e.c, e.t, e.n)
 
 // 输出
 const out = `/** 元素索引反应库（由 scripts/genBank.mjs 自动生成） */

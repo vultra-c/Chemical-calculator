@@ -68,6 +68,19 @@ import { loadSettings } from '../../common/logic/settings.js'
 // 分块渲染：首屏 15 条，滚动到底追加 15 条（Vela 文档：长列表应分页避免首屏卡顿）
 const RES_CHUNK = 15
 
+/**
+ * 对 rows[start,end) 区间懒计算方程式展示文本与行高档位。
+ * equationText 内部有 entry._text 缓存，重复命中零成本；
+ * 超 26 字符切两行高卡（真机下标偏宽，余量已放大）。
+ */
+function fillEquationText(rows, start, end) {
+  for (let i = start; i < end; i++) {
+    const eq = equationText(rows[i].entry)
+    rows[i].text = eq
+    rows[i].tall = eq.length > 26
+  }
+}
+
 export default {
   private: {
     inputStr: '',
@@ -133,7 +146,10 @@ export default {
   onReachBottom() {
     if (!this.hasMoreRes || !this.elementResults.length) return
     const end = Math.min(this.renderPos + RES_CHUNK, this.elementResults.length)
-    this.visibleResults = this.visibleResults.concat(this.elementResults.slice(this.renderPos, end))
+    // 追加块先补方程式文本（懒计算），再 splice 增量挂载，避免整表重建触发全列 diff
+    fillEquationText(this.elementResults, this.renderPos, end)
+    const more = this.elementResults.slice(this.renderPos, end)
+    this.visibleResults.splice(this.visibleResults.length, 0, ...more)
     this.renderPos = end
     this.hasMoreRes = this.renderPos < this.elementResults.length
   },
@@ -155,12 +171,13 @@ export default {
     } catch (err) {
       hits = []
     }
+    // 懒文本：仅首屏 RES_CHUNK 条立即解析成展示文本；
+    // 其余行先占位，滚动追加时再解析，搜索按钮点击链路不再被几十次化学式解析占住。
     const rows = []
     for (let i = 0; i < hits.length; i++) {
-      const eq = equationText(hits[i])
-      // 超 26 字符切两行高卡（真机下标偏宽，余量已放大）
-      rows.push({ text: eq, type: hits[i].t, entry: hits[i], tall: eq.length > 26, rid: 'e' + i })
+      rows.push({ text: '', type: hits[i].t, entry: hits[i], tall: false, rid: 'e' + i })
     }
+    fillEquationText(rows, 0, Math.min(RES_CHUNK, rows.length))
     this.elementResults = rows
     this.visibleResults = rows.slice(0, RES_CHUNK)
     this.renderPos = Math.min(RES_CHUNK, rows.length)

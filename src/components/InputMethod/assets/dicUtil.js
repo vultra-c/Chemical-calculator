@@ -457,6 +457,15 @@ SimpleInputMethod.getMultiHanzi = function(pinyin, lang = 'cn') {
   return { words: wout, composed: composed, segs: segs, sylTopChars: sylTopChars }
 }
 
+// 同音字串 → 字符数组共享缓存：每键每次 split 数百元数组是按键热路径的
+// 稳定开销，缓存后同键重复查询退化为读引用（调用方只读消费，无原地修改）。
+SimpleInputMethod._charsOf = function(str) {
+  const c = this._charCache || (this._charCache = {})
+  let arr = c[str]
+  if (!arr) { arr = str.split(''); c[str] = arr }
+  return arr
+}
+
 SimpleInputMethod.getHanzi = function(pinyin, lang = 'cn') {
   // 未初始化守卫（initDict 延迟到首帧后执行，此期间返回空）
   if (!this.dict.syllableSet) return { chars: [], matched: '', multi: null }
@@ -465,7 +474,7 @@ SimpleInputMethod.getHanzi = function(pinyin, lang = 'cn') {
   let matched = ''
   let result = this.getSingleHanzi(pinyin, lang)
   if (result) {
-    chars = result.split('')
+    chars = this._charsOf(result)
     matched = pinyin
   } else {
     let max = Math.min(pinyin.length, 6)
@@ -473,7 +482,7 @@ SimpleInputMethod.getHanzi = function(pinyin, lang = 'cn') {
       let head = pinyin.substr(0, len)
       let rs = this.getSingleHanzi(head, lang)
       if (rs) {
-        chars = rs.split('')
+        chars = this._charsOf(rs)
         matched = head
         break
       }

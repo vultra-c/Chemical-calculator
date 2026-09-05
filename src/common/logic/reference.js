@@ -3,9 +3,9 @@
  * 数据源全部派生自 elements.js 常量，页面只渲染不加工。
  * 行结构复用 catalog 的 {kind:'title'|'item', main, sub}，可视化与常用物质表一致。
  */
-import { ATOMIC_MASSES, ACTIVITY, CATION_CHARGE, ANIONS, INSOLUBLE } from './elements.js'
+import { ATOMIC_MASSES, ACTIVITY, CATION_CHARGE, ANIONS, INSOLUBLE, ELEMENT_Z, ION_TABLE } from './elements.js'
 import { ELEMENT_CN } from './elementQuery.js'
-import { formulaToText } from './fmt.js'
+import { formulaToText, ionText } from './fmt.js'
 import { formulaName } from './substances.js'
 
 const REV_CN = {}
@@ -32,6 +32,28 @@ function atomMassRows() {
     rows.push({ main: left, sub: right })
   }
   return rows
+}
+
+/** 元素周期表（按原子序数 1→118，两列「序数 中文 符号」成对成行） */
+function periodicRows() {
+  const syms = Object.keys(ATOMIC_MASSES)
+  const rows = []
+  for (let i = 0; i < syms.length; i += 2) {
+    const a = syms[i]
+    const b = syms[i + 1]
+    const left = ELEMENT_Z[a] + ' ' + cnName(a) + ' ' + a
+    const right = b ? ELEMENT_Z[b] + ' ' + cnName(b) + ' ' + b : ''
+    rows.push({ main: left, sub: right })
+  }
+  return rows
+}
+
+/** 常见离子符号（阳离子在前、阴离子随后；电荷上标展示） */
+function ionRows() {
+  return ION_TABLE.map(it => ({
+    main: it.name + ' ' + ionText(it.f, it.q),
+    sub: ''
+  }))
 }
 
 function cationRows() {
@@ -68,8 +90,41 @@ function insolubleRows() {
   })
 }
 
+/** 常见物质颜色（九年级推断题速查） */
+const COLOR_ROWS = [
+  { main: '黑色固体', sub: 'C、CuO、MnO₂、Fe₃O₄、铁粉' },
+  { main: '红色固体', sub: 'Cu（紫红）、Fe₂O₃（红棕）、红磷（暗红）' },
+  { main: '黄色固体', sub: 'S（淡黄）' },
+  { main: '紫黑色固体', sub: 'KMnO₄' },
+  { main: '蓝色晶体', sub: 'CuSO₄·5H₂O（胆矾）' },
+  { main: '蓝色沉淀', sub: 'Cu(OH)₂' },
+  { main: '红褐色沉淀', sub: 'Fe(OH)₃' },
+  { main: '白色沉淀（不溶于稀酸）', sub: 'BaSO₄、AgCl' },
+  { main: '白色沉淀（溶于酸并放气）', sub: 'CaCO₃、BaCO₃、MgCO₃' },
+  { main: '白色沉淀（溶于酸不放气）', sub: 'Mg(OH)₂、Al(OH)₃、Zn(OH)₂' },
+  { main: '蓝色溶液', sub: '含 Cu²⁺：CuSO₄、CuCl₂、Cu(NO₃)₂' },
+  { main: '浅绿色溶液', sub: '含 Fe²⁺：FeSO₄、FeCl₂' },
+  { main: '黄色溶液', sub: '含 Fe³⁺：FeCl₃、Fe₂(SO₄)₃' },
+  { main: '高锰酸钾溶液', sub: '紫红色' }
+]
+
+/** 常见气体的制取与检验（九年级实验题速查：main=气体，sub=制法·检验） */
+const GAS_ROWS = [
+  { main: 'O₂ 制取', sub: 'KMnO₄ 加热 / KClO₃+MnO₂ / H₂O₂+MnO₂' },
+  { main: 'O₂ 检验', sub: '带火星木条复燃' },
+  { main: 'H₂ 制取', sub: 'Zn + 稀硫酸（或稀盐酸）' },
+  { main: 'H₂ 检验', sub: '点燃爆鸣、淡蓝火焰，干冷烧杯内壁有水珠' },
+  { main: 'CO₂ 制取', sub: '大理石/石灰石 + 稀盐酸（不用浓盐酸与稀硫酸）' },
+  { main: 'CO₂ 检验', sub: '通入澄清石灰水，变浑浊' },
+  { main: 'CO₂ 验满', sub: '燃着木条放瓶口，熄灭则满' },
+  { main: 'NH₃ 检验', sub: '湿润红色石蕊试纸变蓝，刺激性气味' },
+  { main: 'CO 检验', sub: '点燃蓝色火焰，产物使石灰水变浑浊' },
+  { main: '水蒸气检验', sub: '无水硫酸铜（白色）变蓝' }
+]
+
 /** 分组化数据：{title, rows[]} — 金属活动性按记忆节律折 3 行 */
 export const REFERENCE_SECTIONS = [
+  { title: '元素周期表（118 元素 · 按原子序数）', rows: periodicRows() },
   {
     title: '金属活动性顺序',
     rows: [
@@ -80,7 +135,10 @@ export const REFERENCE_SECTIONS = [
   },
   { title: '常见元素化合价', rows: cationRows() },
   { title: '常见根 / 酸根化合价', rows: anionRows() },
+  { title: '常见离子符号', rows: ionRows() },
   { title: '常见不溶物（沉淀）', rows: insolubleRows() },
+  { title: '常见物质颜色', rows: COLOR_ROWS },
+  { title: '常见气体制取与检验', rows: GAS_ROWS },
   { title: '相对原子质量表', rows: atomMassRows() }
 ]
 

@@ -74,8 +74,8 @@ function classifyImpl(formula) {
     if (METALS.indexOf(other) !== -1) return 'mo'
     return 'ao'
   }
-  // 盐：含金属/铵根 + 酸根或卤素等
-  if (/^(NH4)/.test(formula)) return 'salt'
+  // 盐：含金属/铵根 + 酸根或卤素等（兼容 (NH4)2SO4 括号写法）
+  if (/^\(?NH4/.test(formula)) return 'salt'
   const hasMetal = keys.some(k => METALS.indexOf(k) !== -1)
   if (hasMetal) {
     if (getRadical(r.counts, keys)) return 'salt'
@@ -122,32 +122,39 @@ export function saltIons(formula) {
   const counts = r.counts
   const keys = Object.keys(counts)
 
-  // 铵盐：NH4 为阳离子，其余组成识别阴离子
-  if (/^NH4/.test(formula)) {
-    const nCount = counts.N || 0
-    if (nCount <= 0) return null
-    const rest = Object.assign({}, counts)
-    rest.N = (rest.N || 0) - nCount
-    rest.H = (rest.H || 0) - nCount * 4
-    const rk = Object.keys(rest).filter(k => rest[k] > 0)
-    if (rk.length === 0) return null
-    // 单一简单阴离子：NH4Cl / NH4Br / NH4I / NH4? S 类
-    if (rk.length === 1 && ANIONS[rk[0]]) {
-      const id = rk[0]
-      return { cation: { sym: 'NH4', count: nCount, q: 1 }, anion: { id, count: rest[id], q: ANIONS[id].charge } }
-    }
-    const sig = makeSig(rest, rk)
-    const cands = RADICAL_SIGNATURES[sig]
-    if (!cands) return null
-    const centerKey = rk.find(k => k !== 'O' && k !== 'H') || rk[0]
-    const acount = rest[centerKey]
-    for (const id of cands) {
-      const aq = Math.abs(ANIONS[id].charge)
-      if (nCount * 1 === acount * aq) {
-        return { cation: { sym: 'NH4', count: nCount, q: 1 }, anion: { id, count: acount, q: ANIONS[id].charge } }
+  // 铵盐：NH4 为阳离子，其余组成识别阴离子。
+  // NH4NO3 这类盐里 N 出现次数 ≠ 铵根个数，需从大到小试铵根份数直到组成自洽。
+  if (/^\(?NH4/.test(formula)) {
+    const maxN = counts.N || 0
+    for (let nCount = maxN; nCount >= 1; nCount--) {
+      const rest = Object.assign({}, counts)
+      rest.N = (rest.N || 0) - nCount
+      rest.H = (rest.H || 0) - nCount * 4
+      if (rest.N < 0 || rest.H < 0) continue
+      const rk = Object.keys(rest).filter(k => rest[k] > 0)
+      if (rk.length === 0) continue
+      // 单一简单阴离子：NH4Cl / NH4Br / NH4I / (NH4)2S 类
+      if (rk.length === 1 && ANIONS[rk[0]]) {
+        const id = rk[0]
+        return { cation: { sym: 'NH4', count: nCount, q: 1 }, anion: { id, count: rest[id], q: ANIONS[id].charge } }
+      }
+      const sig = makeSig(rest, rk)
+      const cands = RADICAL_SIGNATURES[sig]
+      if (!cands) continue
+      const centerKey = rk.find(k => k !== 'O' && k !== 'H') || rk[0]
+      const acount = rest[centerKey]
+      let matched = false
+      for (const id of cands) {
+        const aq = Math.abs(ANIONS[id].charge)
+        if (nCount * 1 === acount * aq) {
+          return { cation: { sym: 'NH4', count: nCount, q: 1 }, anion: { id, count: acount, q: ANIONS[id].charge } }
+        }
+      }
+      if (!matched) {
+        return { cation: { sym: 'NH4', count: nCount, q: 1 }, anion: { id: cands[0], count: acount, q: ANIONS[cands[0]].charge } }
       }
     }
-    return { cation: { sym: 'NH4', count: nCount, q: 1 }, anion: { id: cands[0], count: acount, q: ANIONS[cands[0]].charge } }
+    return null
   }
 
   // 阳离子元素
@@ -308,6 +315,15 @@ addSpec(['SO2', 'O2'], ['SO3'], '氧化还原反应', '催化剂、加热')
 addSpec(['NH3', 'O2'], ['NO', 'H2O'], '氧化还原反应', '催化剂、加热')
 addSpec(['H2O', 'NO2'], ['HNO3', 'NO'], '氧化还原反应', '')
 addSpec(['HCl', 'MnO2'], ['MnCl2', 'Cl2', 'H2O'], '氧化还原反应', '加热、浓盐酸')
+// 氨与酸（浓氨水遇浓盐酸产生白烟，九下化肥单元考点）
+addSpec(['NH3', 'HCl'], ['NH4Cl'], '化合反应', '')
+addSpec(['NH3', 'H2SO4'], ['(NH4)2SO4'], '化合反应', '')
+addSpec(['NH3', 'HNO3'], ['NH4NO3'], '化合反应', '')
+// 人教版九年级补充
+addSpec(['CO', 'CuO'], ['Cu', 'CO2'], '氧化还原反应', '加热')
+addSpec(['H2', 'WO3'], ['W', 'H2O'], '置换反应', '高温')
+addSpec(['CO', 'WO3'], ['W', 'CO2'], '氧化还原反应', '高温')
+addSpec(['(NH4)2CO3'], ['NH3', 'CO2', 'H2O'], '分解反应', '加热')
 
 // 三元
 addSpec(['CO2', 'H2O', 'CaCO3'], ['Ca(HCO3)2'], '化合反应', '')
@@ -512,7 +528,7 @@ function ruleAcidBase(x, y, cx, cy) {
 function ruleMetalAcid(x, y, cx, cy) {
   if (cx === 'metal' && cy === 'acid') {
     if (['HCl', 'H2SO4'].indexOf(y) === -1) {
-      return { ok: false, error: '金属与酸置换请使用盐酸或稀硫酸' }
+      return { ok: false, error: '金属与酸的置换反应请使用盐酸或稀硫酸\n（硝酸与浓硫酸有强氧化性，Fe/Al 遇浓酸常温钝化，不产生氢气）' }
     }
     const idxM = activityIndex(x)
     const idxH = activityIndex('H')

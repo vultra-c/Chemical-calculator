@@ -71,6 +71,25 @@ import { loadSettings } from '../../common/logic/settings.js'
 // 分块渲染：首屏 15 条，滚动到底追加 15 条
 const RES_CHUNK = 15
 
+/**
+ * 对 rows[start,end) 区间懒计算方程式展示文本与行高档位。
+ * equationText 内部有 entry._text 缓存，重复命中零成本。
+ * 行上带 missing 列表（合成查询的缺反应物分支）时同步拼「还需 X」文案。
+ */
+function fillRowText(rows, start, end) {
+  for (let i = start; i < end; i++) {
+    const it = rows[i]
+    const eq = equationText(it.entry)
+    it.text = eq
+    it.tall = eq.length > 26
+    if (it.missing) {
+      it.type = it.missing.length
+        ? it.entry.t + ' · 还需 ' + it.missing.map(m => formulaToText(m)).join('、')
+        : it.entry.t + ' · 反应物已齐'
+    }
+  }
+}
+
 export default {
   private: {
     inputStr: '',
@@ -143,7 +162,9 @@ export default {
   onReachBottom() {
     if (!this.hasMoreRes || !this.synthResults.length) return
     const end = Math.min(this.renderPos + RES_CHUNK, this.synthResults.length)
-    this.visibleResults = this.visibleResults.concat(this.synthResults.slice(this.renderPos, end))
+    // 追加块先懒计算方程式文本，再 splice 增量挂载，避免整表重建触发全列 diff
+    fillRowText(this.synthResults, this.renderPos, end)
+    this.visibleResults.splice(this.visibleResults.length, 0, ...this.synthResults.slice(this.renderPos, end))
     this.renderPos = end
     this.hasMoreRes = this.renderPos < this.synthResults.length
   },
@@ -167,37 +188,19 @@ export default {
     try {
       if (known) {
         const comps = findCompletions(product.formula, [known.formula], 50)
-        // 行文案：方程式 + 类型 · 还需 X（反应物已凑齐则标注）；超 26 字符切两行高卡
-        hits = comps.map((c, i) => {
-          const eq = equationText(c.entry)
-          const missText = c.missing.map(m => formulaToText(m)).join('、')
-          return {
-            text: eq,
-            type: c.missing.length ? c.entry.t + ' · 还需 ' + missText : c.entry.t + ' · 反应物已齐',
-            entry: c.entry,
-            tall: eq.length > 26,
-            rid: 'c' + i
-          }
-        })
+        hits = comps.map((c, i) => ({ text: '', type: c.entry.t, entry: c.entry, missing: c.missing, tall: false, rid: 'c' + i }))
         this.noneMsg = '没有同时使用该反应物的合成路径'
       } else {
         const rows = findProducers(product.formula, 50)
-        hits = rows.map((e, i) => {
-          const eq = equationText(e)
-          return {
-            text: eq,
-            type: e.t,
-            entry: e,
-            tall: eq.length > 26,
-            rid: 'p' + i
-          }
-        })
+        hits = rows.map((e, i) => ({ text: '', type: e.t, entry: e, tall: false, rid: 'p' + i }))
         this.noneMsg = '没有能合成该物质的反应'
       }
     } catch (err) {
       hits = []
     }
 
+    // 懒文本：仅首屏 RES_CHUNK 条立即解析，其余滚动追加时再算，逆推点击不再被批量解析占住
+    fillRowText(hits, 0, Math.min(RES_CHUNK, hits.length))
     this.synthResults = hits
     this.visibleResults = hits.slice(0, RES_CHUNK)
     this.renderPos = Math.min(RES_CHUNK, hits.length)

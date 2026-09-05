@@ -43,7 +43,7 @@ export default {
       { id: 'm3', uri: 'pages/synth', title: '合成查询', sub: '输入产物，逆推需要的反应物' },
       { id: 'm4', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
       { id: 'm5', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' },
-      { id: 'm6', uri: 'pages/reference', title: '化学速查', sub: '活动性 · 化合价 · 原子量 · 沉淀' }
+      { id: 'm6', uri: 'pages/reference', title: '化学速查', sub: '周期表 · 离子 · 沉淀 · 颜色 · 气体' }
     ]
   },
 

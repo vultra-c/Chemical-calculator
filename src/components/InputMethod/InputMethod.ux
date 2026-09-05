@@ -17,7 +17,7 @@
            circle 屏彻底不建此节点（键盘固定 480x321，外置 28px 行会挤压键盘且顶部多一条黑条），
            circle 的拼音改在键盘内部绝对定位显示；if 而非 show：show 隐藏时节点仍在 VDOM，
            circle 顶部会残留黑条 -->
-      <div if="{{screentype !== 'circle'}}" class="cvalrow-wrap" show="{{(lang==='cn' || lang==='jp') && downFlag==='' && !numFlag && cval}}">
+      <div if="{{screentype !== 'circle'}}" class="cvalrow-wrap" show="{{(lang==='cn' || lang==='jp' || lang==='en') && downFlag==='' && !numFlag && cval}}">
         <text class="cvalrow">{{cvalDisplay}}</text>
       </div>
       <!-- 方屏67 -->
@@ -85,7 +85,7 @@
           <div style="width: 60px;height: 60px;" if="{{downFlag==='' && !numFlag && lang==='cn'}}">
             <img src="./assets/horizontal/cn.png" style="width: 60px;height: 60px;" @click="onBtnClick('lang')" />
           </div>
-          <div if="{{(lang === 'cn' || lang === 'jp') && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
+          <div if="{{(lang === 'cn' || lang === 'jp' || lang === 'en') && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
             <!-- 候选横滚行：整词在前、单字随后（拼音已在键盘上方独立小字行显示，这里不放 cval） -->
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
@@ -142,6 +142,7 @@
 import vibrator from "@system.vibrator";
 import device from '@system.device'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
+import { englishSymbolIndex } from "../../common/logic/elements.js";
 function doSearchDic(word, lang, cb) {
   if (!word) {
     cb({ chars: [], multi: null });
@@ -439,13 +440,46 @@ export default {
     this.cvalDisplay = (this.lang === "cn")
       ? SimpleInputMethod.getSegmentedDisplay(this.cval + watingStr)
       : (this.cval + watingStr);
-    if (!(this.cval + watingStr) || (this.lang !== "cn" && this.lang !== "jp")) {
+    if (!(this.cval + watingStr)) {
+      this.resultList = [];
+      this.resultWordList = [];
+      this.setResultListAll();
+      return;
+    }
+    // 英文模式：符号联想（逻辑对齐中文——第一个候选为输入本身，随后为元素符号前缀联想）
+    if (this.lang === "en") {
+      this.applyEnglishCandidates(this.cval + watingStr);
+      return;
+    }
+    if (this.lang !== "cn" && this.lang !== "jp") {
       this.resultList = [];
       this.resultWordList = [];
       this.setResultListAll();
       return;
     }
     this.getResultByWord(this.cval + watingStr);
+  },
+
+  /**
+   * 英文符号联想：输入前缀 → [输入本身, 前缀补全候选…]。
+   * 与中文整词上屏路径完全一致（resultWordList → resultRow0 → onRsSelect 整词消费），
+   * 如输入 c → [c, ca, cd, ce, cl, co, cr, cs, cu]（Ca/Cd/Ce/Cl… 的小写拼接）。
+   */
+  applyEnglishCandidates(input) {
+    const out = [input];
+    const hits = englishSymbolIndex()[input.toLowerCase()];
+    if (hits) {
+      for (let i = 0; i < hits.length && out.length < 13; i++) {
+        // rest 为空表示整个符号即输入本身（与 out[0] 重复），跳过
+        if (hits[i].rest === '') continue;
+        out.push(input + hits[i].rest);
+      }
+    }
+    this.resultList = [];
+    this.matchedLen = 0;
+    this.sylTopChars = [];
+    this.resultWordList = out;
+    this.setResultListAll();
   },
   setResultListAll() {
     // 首页展示序列：整词在前，单字随后，截断到 maxlength
@@ -573,11 +607,9 @@ export default {
     if ((this.lang === 'cn' || this.lang === 'jp')  && !this.numFlag) {
       this.cval += num.toLowerCase();
     } else if (this.lang === "en" && !this.numFlag) {
-      if (this.upperFlag) {
-        this.addAllTxt(num.toUpperCase());
-      } else {
-        this.addAllTxt(num.toLowerCase());
-      }
+      // 英文符号联想模式：字母先聚到 cval，由候选行展示联想（对齐中文输入逻辑），
+      // 点候选整体/逐键均可；尊重大小写锁定（upperFlag 大写）。
+      this.cval += this.upperFlag ? num.toUpperCase() : num.toLowerCase();
     } else {
       this.addAllTxt(num);
     }
@@ -653,10 +685,14 @@ export default {
     }
   },
   handelScroll(event) {
+    // 横滑进度条减帧：滚动事件高频触发，percent 变化不足阈值时不回写，
+    // 避免 progress 组件每帧重建导致键盘区横滑掉帧（真机卡顿排查 2026-09）。
     let percentTemp67 = (event.scrollX / 636) * 100 + 52.8;
-    this.percent67 = parseInt(percentTemp67 <= 100 ? percentTemp67 : 100);
+    const next67 = parseInt(percentTemp67 <= 100 ? percentTemp67 : 100);
+    if (Math.abs(next67 - this.percent67) >= 2) this.percent67 = next67;
     let percentTemp66 = (event.scrollX / 633) * 100;
-    this.percent66 = parseInt(percentTemp66 <= 100 ? percentTemp66 : 100);
+    const next66 = parseInt(percentTemp66 <= 100 ? percentTemp66 : 100);
+    if (Math.abs(next66 - this.percent66) >= 2) this.percent66 = next66;
   },
   pushCval() {
     this.onVibrate();

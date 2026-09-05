@@ -276,17 +276,38 @@ T('反应库扩展后含新条目（铝热/醋酸/活泼金属与水）', () => 
 
 // ---- 数据速查（reference.js） ----
 import { REFERENCE_SECTIONS, flattenReference, cnName } from '../src/common/logic/reference.js'
-T('速查 五组齐备', () => {
+T('速查 九组齐备', () => {
   const titles = REFERENCE_SECTIONS.map(s => s.title)
-  for (const t of ['金属活动性顺序', '常见元素化合价', '常见根 / 酸根化合价', '常见不溶物（沉淀）', '相对原子质量表']) {
+  for (const t of ['元素周期表（118 元素 · 按原子序数）', '金属活动性顺序', '常见元素化合价', '常见根 / 酸根化合价', '常见离子符号', '常见不溶物（沉淀）', '常见物质颜色', '常见气体制取与检验', '相对原子质量表']) {
     assert(titles.indexOf(t) !== -1, '缺组 ' + t)
   }
 })
-T('速查 原子质量 38 元素成对成行', () => {
+T('速查 元素周期表 118 全量按序', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title.indexOf('元素周期表') !== -1)
+  assert(sec, '应有元素周期表分组')
+  assert.equal(sec.rows.length, 59)
+  assert(sec.rows[0].main.indexOf('1 氢 H') !== -1)
+  assert(sec.rows[0].sub.indexOf('2 氦 He') !== -1)
+  assert(sec.rows[58].main.indexOf('117') !== -1 && sec.rows[58].sub.indexOf('118') !== -1)
+  assert(sec.rows[25].main.indexOf('51') !== -1, '序数 51 那行应存在')
+})
+T('速查 原子质量 118 元素成对成行', () => {
   const sec = REFERENCE_SECTIONS.find(s => s.title === '相对原子质量表')
-  assert.equal(sec.rows.length, 19)
+  assert.equal(sec.rows.length, 59)
   assert(sec.rows[0].main.indexOf('氢 H') !== -1)
   assert(sec.rows[0].sub.indexOf('氦 He') !== -1)
+  assert(sec.rows[58].main.indexOf(' Ts ') !== -1 || sec.rows[58].main.indexOf('Ts') !== -1)
+})
+T('速查 离子符号表含 Na⁺ 与 SO₄²⁻', () => {
+  const sec = REFERENCE_SECTIONS.find(s => s.title === '常见离子符号')
+  assert(sec.rows.length >= 30)
+  const t = sec.rows.map(r => r.main).join(' ')
+  assert(t.indexOf('钠离子 Na⁺') !== -1)
+  assert(t.indexOf('硫酸根离子 SO₄²⁻') !== -1)
+  assert(t.indexOf('铁离子 Fe³⁺') !== -1)
+  assert(t.indexOf('亚铁离子 Fe²⁺') !== -1)
+  assert(t.indexOf('铵根离子 NH₄⁺') !== -1)
+  assert(t.indexOf('碳酸氢根离子 HCO₃⁻') !== -1)
 })
 T('速查 活动性三行序列', () => {
   const sec = REFERENCE_SECTIONS.find(s => s.title === '金属活动性顺序')
@@ -315,9 +336,19 @@ T('速查 沉淀表含碳酸钙/氯化银', () => {
 })
 T('速查 flattenReference 行流带标题行', () => {
   const rows = flattenReference()
-  assert.equal(rows.filter(r => r.kind === 'title').length, 5)
-  assert(rows.length > 70)
+  assert.equal(rows.filter(r => r.kind === 'title').length, 9)
+  assert(rows.length > 200)
   assert.equal(cnName('Fe'), '铁')
+})
+T('速查 颜色与气体分组内容', () => {
+  const c = REFERENCE_SECTIONS.find(s => s.title === '常见物质颜色')
+  const ct = c.rows.map(r => r.main + r.sub).join(' ')
+  assert(ct.indexOf('红褐色沉淀') !== -1 && ct.indexOf('Cu(OH)₂') !== -1)
+  assert(ct.indexOf('浅绿色溶液') !== -1)
+  const g = REFERENCE_SECTIONS.find(s => s.title === '常见气体制取与检验')
+  const gt = g.rows.map(r => r.main + r.sub).join(' ')
+  assert(gt.indexOf('带火星木条复燃') !== -1)
+  assert(gt.indexOf('大理石/石灰石 + 稀盐酸') !== -1)
 })
 
 // ---- 化学专属输入词库（gen_chem_dict.py 生成；防回归） ----
@@ -351,6 +382,142 @@ T('词库 仪器与概念词齐备', () => {
   for (const k of ['shiguan', 'rongjiedu', 'jiqiping', 'jiujingdeng', 'baoherongye']) {
     assert(w[k], k + ' 应在词库中')
   }
+})
+
+// ---- 人教版九年级化学考纲全覆盖断言组 ----
+import { ELEMENT_Z, englishSymbolIndex, ION_TABLE, ATOMIC_MASSES } from '../src/common/logic/elements.js'
+
+T('元素库 118 全量带序号', () => {
+  assert.equal(Object.keys(ATOMIC_MASSES).length, 118)
+  assert.equal(ELEMENT_Z['H'], 1)
+  assert.equal(ELEMENT_Z['Fe'], 26)
+  assert.equal(ELEMENT_Z['Ba'], 56)
+  assert.equal(ELEMENT_Z['Og'], 118)
+})
+
+T('离子符号表 ≥ 30 种', () => {
+  assert(ION_TABLE.length >= 30)
+  assert(ION_TABLE.some(it => it.f === 'NH4' && it.q === '+1'))
+  assert(ION_TABLE.some(it => it.f === 'Fe' && it.q === '+2'))
+  assert(ION_TABLE.some(it => it.f === 'Fe' && it.q === '+3'))
+})
+
+T('英文符号联想 c → c, ca', () => {
+  const idx = englishSymbolIndex()
+  // 键盘 applyEnglishCandidates 同款逻辑：首项输入本身，次项起为前缀补全（rest 非空）
+  const out = ['c']
+  for (const h of idx['c']) { if (h.rest !== '') out.push('c' + h.rest) }
+  assert.equal(out[0], 'c')
+  assert.equal(out[1], 'ca')
+  assert(out.indexOf('cl') !== -1 && out.indexOf('cu') !== -1)
+  const out2 = ['S']
+  for (const h of idx['s']) { if (h.rest !== '') out2.push('S' + h.rest) }
+  assert.equal(out2.length > 1, true)
+  assert(out2.indexOf('Si') !== -1, 'S 联想应含 Si')
+  assert.equal(out2.filter(x => x === 'S').length, 1, 'S 只出现一次（首项）')
+})
+
+T('考纲 燃烧与分解（上册 U2/U4/U6）', () => {
+  eq(['P', 'O2'], ['P2O5'])
+  eq(['S', 'O2'], ['SO2'])
+  eq(['Fe', 'O2'], ['Fe3O4'])
+  eq(['Mg', 'O2'], ['MgO'])
+  eq(['H2', 'O2'], ['H2O'])
+  eq(['H2O2'], ['H2O', 'O2'])
+  eq(['KClO3'], ['KCl', 'O2'])
+  eq(['KMnO4'], ['K2MnO4', 'MnO2', 'O2'])
+  eq(['H2O'], ['H2', 'O2'])
+  eq(['H2', 'CuO'], ['Cu', 'H2O'])
+})
+
+T('考纲 碳与碳的氧化物（上册 U6）', () => {
+  eq(['C', 'O2'], ['CO2'])                              // 充分燃烧
+  eq(['C', 'CO2'], ['CO'])                              // 高温还原 CO2
+  { const r = eq(['C', 'CuO'], ['Cu', 'CO2']); assert.deepEqual(r.coefs, [1, 2, 2, 1]) }
+  eq(['C', 'Fe2O3'], ['Fe', 'CO2'])
+  eq(['CO', 'O2'], ['CO2'])
+  { const r = eq(['CO', 'CuO'], ['Cu', 'CO2']); assert.equal(r.cond, '加热') }
+  eq(['CO', 'Fe2O3'], ['Fe', 'CO2'])
+  eq(['CO2', 'H2O'], ['H2CO3'])
+  eq(['H2CO3'], ['H2O', 'CO2'])
+  eq(['CO2', 'Ca(OH)2'], ['CaCO3', 'H2O'])
+  eq(['CaCO3', 'HCl'], ['CaCl2', 'H2O', 'CO2'])
+  eq(['CaCO3'], ['CaO', 'CO2'])
+})
+
+T('考纲 燃料（上册 U7）', () => {
+  eq(['CH4', 'O2'], ['CO2', 'H2O'])
+  eq(['C2H5OH', 'O2'], ['CO2', 'H2O'])
+})
+
+T('考纲 金属（下册 U8）', () => {
+  eq(['Zn', 'H2SO4'], ['ZnSO4', 'H2'])
+  eq(['Fe', 'H2SO4'], ['FeSO4', 'H2'])
+  eq(['Fe', 'HCl'], ['FeCl2', 'H2'])
+  eq(['Mg', 'HCl'], ['MgCl2', 'H2'])
+  eq(['Al', 'HCl'], ['AlCl3', 'H2'])
+  eq(['Fe', 'CuSO4'], ['FeSO4', 'Cu'])
+  eq(['Cu', 'AgNO3'], ['Cu(NO3)2', 'Ag'])
+  eq(['Zn', 'CuSO4'], ['ZnSO4', 'Cu'])
+  eq(['Al', 'CuSO4'], ['Al2(SO4)3', 'Cu'])
+  eq(['CO', 'Fe2O3'], ['Fe', 'CO2'])
+  eq(['Cu', 'O2'], ['CuO'])
+  eq(['Al', 'O2'], ['Al2O3'])
+})
+
+T('考纲 酸碱盐（下册 U10/U11）', () => {
+  eq(['HCl', 'NaOH'], ['NaCl', 'H2O'])
+  eq(['H2SO4', 'NaOH'], ['Na2SO4', 'H2O'])
+  eq(['HCl', 'Ca(OH)2'], ['CaCl2', 'H2O'])
+  eq(['HCl', 'Al(OH)3'], ['AlCl3', 'H2O'])             // 胃酸中和
+  eq(['Fe2O3', 'HCl'], ['FeCl3', 'H2O'])               // 除铁锈
+  eq(['Fe2O3', 'H2SO4'], ['Fe2(SO4)3', 'H2O'])
+  eq(['CuO', 'H2SO4'], ['CuSO4', 'H2O'])
+  eq(['HCl', 'Na2CO3'], ['NaCl', 'H2O', 'CO2'])
+  eq(['HCl', 'NaHCO3'], ['NaCl', 'H2O', 'CO2'])
+  eq(['HCl', 'AgNO3'], ['HNO3', 'AgCl'])
+  eq(['H2SO4', 'BaCl2'], ['HCl', 'BaSO4'])
+  eq(['H2SO4', 'Na2CO3'], ['Na2SO4', 'H2O', 'CO2'])
+  eq(['CO2', 'NaOH'], ['Na2CO3', 'H2O'])
+  eq(['SO2', 'NaOH'], ['Na2SO3', 'H2O'])
+  eq(['SO3', 'NaOH'], ['Na2SO4', 'H2O'])
+  eq(['CaO', 'H2O'], ['Ca(OH)2'])
+  eq(['Ca(OH)2', 'Na2CO3'], ['CaCO3', 'NaOH'])
+  eq(['CuSO4', 'NaOH'], ['Na2SO4', 'Cu(OH)2'])
+  eq(['FeCl3', 'NaOH'], ['NaCl', 'Fe(OH)3'])
+  eq(['NaCl', 'AgNO3'], ['NaNO3', 'AgCl'])
+  eq(['BaCl2', 'Na2SO4'], ['BaSO4', 'NaCl'])
+  eq(['CaCl2', 'Na2CO3'], ['CaCO3', 'NaCl'])
+  eq(['NaHCO3'], ['Na2CO3', 'H2O', 'CO2'])
+  eq(['(NH4)2CO3'], ['NH3', 'CO2', 'H2O'])
+  eq(['Ca(OH)2', 'NH4Cl'], ['NH3', 'H2O', 'CaCl2'])
+  eq(['Ca(OH)2', '(NH4)2SO4'], ['NH3', 'H2O', 'CaSO4'])
+  eq(['NaOH', 'NH4NO3'], ['NH3', 'H2O', 'NaNO3'])
+  eq(['Ba(OH)2', 'CuSO4'], ['BaSO4', 'Cu(OH)2'])
+})
+
+T('考纲 冶炼钨（九下金属冶炼扩展）', () => {
+  eq(['H2', 'WO3'], ['W', 'H2O'])
+  eq(['CO', 'WO3'], ['W', 'CO2'])
+})
+
+T('反应库收录不充分燃烧与浓硫酸', () => {
+  const bank = ELEMENT_BANK
+  const has = (rs, ps) => bank.some(e => rs.every(f => e.r.indexOf(f) >= 0) && e.p && ps.every(f => e.p.indexOf(f) >= 0))
+  assert(has(['C', 'O2'], ['CO']), '应含 2C+O2=2CO 不充分燃烧')
+  assert(has(['Cu', 'H2SO4'], ['SO2']), '应含 Cu+浓硫酸')
+  assert(bank.length >= 250, '反应库应 ≥250 条，实际 ' + bank.length)
+})
+
+T('新物质名解析（考试俗名补全）', () => {
+  const names = ['过氧化氢', '双氧水', '氨水', '石灰乳', '氯化铁', '氯化亚铁', '硫酸钙', '亚硫酸钠',
+    '亚硝酸钾', '硫代硫酸钠', '碳酸铵', '铁锈', '三氧化钨', '氧化铅', '一氧化氮', '溴', '碘', '钨']
+  for (const n of names) {
+    const r = resolveToken(n, NAME_MAP)
+    assert.equal(r.ok, true, n + ' 应可解析')
+  }
+  assert.equal(resolveToken('氯化铁', NAME_MAP).formula, 'FeCl3')
+  assert.equal(resolveToken('氨水', NAME_MAP).formula, 'NH3')
 })
 
 console.log('\n==== RESULT:', pass, 'passed,', fail, 'failed ====')

@@ -16,17 +16,42 @@ export { equationText } from './fmt.js'
 /** 已知元素符号集合（用于校验输入） */
 export const ELEMENT_SYMBOLS = Object.keys(ATOMIC_MASSES)
 
-/** 中文元素名 → 元素符号（氧→O、铁→Fe …，供元素查询输入） */
+/** 中文元素名 → 元素符号（氧→O、铁→Fe …，供元素查询输入；118 全量） */
 export const ELEMENT_CN = {
   '氢': 'H', '氦': 'He', '锂': 'Li', '铍': 'Be', '硼': 'B',
   '碳': 'C', '氮': 'N', '氧': 'O', '氟': 'F', '氖': 'Ne',
   '钠': 'Na', '镁': 'Mg', '铝': 'Al', '硅': 'Si', '磷': 'P',
   '硫': 'S', '氯': 'Cl', '氩': 'Ar', '钾': 'K', '钙': 'Ca',
-  '钛': 'Ti', '铬': 'Cr', '锰': 'Mn', '铁': 'Fe', '镍': 'Ni',
-  '铜': 'Cu', '锌': 'Zn', '砷': 'As', '溴': 'Br', '银': 'Ag',
-  '碘': 'I', '钡': 'Ba', '铂': 'Pt', '金': 'Au', '汞': 'Hg',
-  '铅': 'Pb', '锡': 'Sn', '钨': 'W'
+  '钪': 'Sc', '钛': 'Ti', '钒': 'V', '铬': 'Cr', '锰': 'Mn',
+  '铁': 'Fe', '钴': 'Co', '镍': 'Ni', '铜': 'Cu', '锌': 'Zn',
+  '镓': 'Ga', '锗': 'Ge', '砷': 'As', '硒': 'Se', '溴': 'Br',
+  '氪': 'Kr', '铷': 'Rb', '锶': 'Sr', '钇': 'Y', '锆': 'Zr',
+  '铌': 'Nb', '钼': 'Mo', '锝': 'Tc', '钌': 'Ru', '铑': 'Rh',
+  '钯': 'Pd', '银': 'Ag', '镉': 'Cd', '铟': 'In', '锡': 'Sn',
+  '锑': 'Sb', '碲': 'Te', '碘': 'I', '氙': 'Xe', '铯': 'Cs',
+  '钡': 'Ba', '镧': 'La', '铈': 'Ce', '镨': 'Pr', '钕': 'Nd',
+  '钷': 'Pm', '钐': 'Sm', '铕': 'Eu', '钆': 'Gd', '铽': 'Tb',
+  '镝': 'Dy', '钬': 'Ho', '铒': 'Er', '铥': 'Tm', '镱': 'Yb',
+  '镥': 'Lu', '铪': 'Hf', '钽': 'Ta', '钨': 'W', '铼': 'Re',
+  '锇': 'Os', '铱': 'Ir', '铂': 'Pt', '金': 'Au', '汞': 'Hg',
+  '铊': 'Tl', '铅': 'Pb', '铋': 'Bi', '钋': 'Po', '砹': 'At',
+  '氡': 'Rn', '钫': 'Fr', '镭': 'Ra', '锕': 'Ac', '钍': 'Th',
+  '镤': 'Pa', '铀': 'U', '镎': 'Np', '钚': 'Pu', '镅': 'Am',
+  '锔': 'Cm', '锫': 'Bk', '锎': 'Cf', '锿': 'Es', '镄': 'Fm',
+  '钔': 'Md', '锘': 'No', '铹': 'Lr'
 }
+// 104-118 号超重元素中文名为扩展区生僻字（初中不考），用标准字形收录：
+// 𬬻 Rf、𬭊 Db、𬭳 Sg、𬭛 Bh、𬭶 Hs、鿏 Mt、𫟼 Ds、𬬭 Rg、鿔 Cn、鿭 Nh、𫓧 Fl、镆 Mc、𫟷 Lv、鿬 Ts、鿫 Og
+ELEMENT_CN['𬬻'] = 'Rf'; ELEMENT_CN['𬭊'] = 'Db'; ELEMENT_CN['𬭳'] = 'Sg'
+ELEMENT_CN['𬭛'] = 'Bh'; ELEMENT_CN['𬭶'] = 'Hs'; ELEMENT_CN['鿏'] = 'Mt'
+ELEMENT_CN['𫟼'] = 'Ds'; ELEMENT_CN['𬬭'] = 'Rg'; ELEMENT_CN['鿔'] = 'Cn'
+ELEMENT_CN['鿭'] = 'Nh'; ELEMENT_CN['𫓧'] = 'Fl'; ELEMENT_CN['镆'] = 'Mc'
+ELEMENT_CN['𫟷'] = 'Lv'; ELEMENT_CN['鿬'] = 'Ts'; ELEMENT_CN['鿫'] = 'Og'
+
+/**
+ * 英文符号联想前缀索引：已下沉至 elements.js（englishSymbolIndex），
+ * 键盘组件直接引用轻量 elements.js，避免本模块牵入完整反应库进键盘 bundle。
+ */
 
 /** 元素符号规范化：fe → Fe，h2o 里的输入不管；只处理单个符号 */
 export function normalizeSymbol(s) {
