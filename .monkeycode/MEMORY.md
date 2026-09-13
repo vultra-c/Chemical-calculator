@@ -76,6 +76,12 @@ This file records user instructions, preferences, and teachings for reference in
   - 排查路径复用: 真机「字面进输入法但无联想/不上屏」→ 先看键盘 JS 是否吞字符（正则、字典初始化异常），
     再看候选行两侧兄弟结构；「整行宽度异常」→ 检查是否使用了 show 隐藏兄弟
 
+  - 兄弟 增删 与 flex 溢出是两个独立真机坑：V26.9.54 复盘发现 en mode 候选行不出现的直接原因
+    是 flex 溢出（en 60 + case 94 + 123 94 + del 60 + 4 cand-ml + 3 side-ml = 326px > 324px 可用），
+    Yoga flex:1 clamps 0 → <text for> 无宽；兄弟 增删是次生隐患
+  - 修法：控制行改恒定 5 槽位（.ks-1st/.ks-mid/.ks-last/.ks-cand 及其 off 变体 class 切换宽度），
+    case/123 图片 94x60 → 60x60 与 cn/en/del 对齐；兄弟数量恒定 + 每键 60 宽，cand 净宽 82px
+
 [Vela 输入法英文模式：字母即时上屏 + 反向 delete 换整词（不依赖候选行渲染）]
 - Date: 2026-09-13
 - Context: 用户反馈 V26.9.52 英文候选行仍不渲染但 JS 数据完整（DIAG toast 证实 rw/r0 正常）
