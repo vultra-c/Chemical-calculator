@@ -93,23 +93,25 @@
             <img if="{{!numFlag && lang==='en'}}" src="./assets/horizontal/en.png" style="width: 60px;height: 60px;" @click="onBtnClick('lang')" />
             <img if="{{numFlag}}" src="./assets/horizontal/back2.png" style="width: 159px;height: 60px;" @click="onBtnClick('switchCn')" />
           </div>
-          <!-- S2 候选横滚（整词在前、单字随后；num 模式让位） -->
+          <!-- S2 候选横滚（整词在前、单字随后；num 模式让位）
+               内部 flex row：scroll 占 flex:1 装 chip，右侧 down 图标 30px 独立列不再绝对定位，
+               避免 chip 与箭头同区域重叠；chips 之间靠 calbtn02 padding-right 呼吸。 -->
           <div class="{{numFlag?'ks-cand-off':'ks-cand'}}">
-            <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
-              <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
+            <scroll id="cvalWaiting" scroll-x="{{true}}" class="ks-cand-scroll">
+              <div static class="ks-cand-chips">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
               </div>
             </scroll>
-            <img if="{{resultRow0.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
+            <img if="{{resultRow0.length > 0}}" class="ks-cand-down" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
           <!-- S3 大小写切换（非 en 或非字母面板时 class width:0 让位） -->
-          <div class="{{(!numFlag && lang==='en')?'ks-mid-60':'ks-mid-0'}}">
-            <img if="{{!numFlag && lang==='en' && upperFlag}}" src="./assets/horizontal/bigA.png" style="width: 60px;height: 60px;" @click="onBtnClick('switchLow')" />
-            <img if="{{!numFlag && lang==='en' && !upperFlag}}" src="./assets/horizontal/a.png" style="width: 60px;height: 60px;" @click="onBtnClick('switchUpper')" />
+          <div class="{{(!numFlag && lang==='en')?'ks-mid-40':'ks-mid-0'}}">
+            <img if="{{!numFlag && lang==='en' && upperFlag}}" src="./assets/horizontal/bigA.png" style="width: 40px;height: 60px;" @click="onBtnClick('switchLow')" />
+            <img if="{{!numFlag && lang==='en' && !upperFlag}}" src="./assets/horizontal/a.png" style="width: 40px;height: 60px;" @click="onBtnClick('switchUpper')" />
           </div>
           <!-- S4 数字/符号面板切换 -->
-          <div class="{{(!numFlag && lang==='en')?'ks-mid-60':'ks-mid-0'}}">
-            <img if="{{!numFlag && lang==='en'}}" src="./assets/horizontal/123.png" style="width: 60px;height: 60px;" @click="onBtnClick('switchNum')" />
+          <div class="{{(!numFlag && lang==='en')?'ks-mid-40':'ks-mid-0'}}">
+            <img if="{{!numFlag && lang==='en'}}" src="./assets/horizontal/123.png" style="width: 40px;height: 60px;" @click="onBtnClick('switchNum')" />
           </div>
           <!-- S5 删除 -->
           <div class="{{numFlag?'ks-last-159':'ks-last-60'}}">
@@ -131,7 +133,9 @@
             </div>
           </list-item>
         </list>
-        <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" show="{{downFlag==='down'}}" />
+        <!-- 收起箭头：if 而非 show（真机 show=false 图片仍占 324x67 布局挡住键盘，
+             曾表现为「下展关闭后 up2 图残留、下方按键无法点击」）-->
+        <img static if="{{downFlag==='down'}}" style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
       </div></div>
       </div>
       </div>
@@ -768,7 +772,7 @@ export default {
 /* ============ 控制行 5 槽位（恒定节点结构 · class 变宽避免兄弟增删）============ */
 .ks-1st-60 { width: 60px;  height: 60px; }
 .ks-1st-159 { width: 159px; height: 60px; }
-.ks-mid-60 { width: 60px;  height: 60px; margin-left: 4px; }
+.ks-mid-40 { width: 40px;  height: 60px; margin-left: 4px; }
 .ks-mid-0  { width: 0;     height: 60px; margin-left: 0; }
 .ks-last-60 { width: 60px;  height: 60px; margin-left: 4px; }
 .ks-last-159 { width: 159px; height: 60px; margin-left: 4px; }
@@ -782,6 +786,23 @@ export default {
   border-radius: 100px;
   flex-direction: row;
   align-items: center;
+  overflow: hidden;
+}
+.ks-cand-scroll {
+  flex: 1;
+  height: 42px;
+}
+.ks-cand-chips {
+  height: 42px;
+  flex-direction: row;
+  padding-left: 12px;
+  padding-right: 6px;
+}
+.ks-cand-down {
+  width: 30px;
+  height: 30px;
+  margin-right: 6px;
+  flex-shrink: 0;
 }
 .ks-cand-off {
   width: 0;
