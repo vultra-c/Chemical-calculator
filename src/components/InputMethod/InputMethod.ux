@@ -143,16 +143,8 @@
 <script>
 import vibrator from "@system.vibrator";
 import device from '@system.device'
-import prompt from '@system.prompt'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
 import { englishSymbolIndex } from "../../common/logic/elements.js";
-// V26.9.52 DIAG — 英文键盘候选不上屏一次性排查提示，锁定根因后可移除
-let _diagEnProbe = false
-let _diagEnKey = false
-function _diag(msg) {
-  try { prompt.showToast({ message: String(msg), duration: 3000 }) } catch (e) {}
-  try { console.error('[IME-DIAG] ' + msg) } catch (e) {}
-}
 function doSearchDic(word, lang, cb) {
   if (!word) {
     cb({ chars: [], multi: null });
@@ -189,6 +181,10 @@ export default {
   },
   data: {
     cval: "",
+    // 英文模式下「已即时上屏、等待候选点选替换」的前缀（cn 模式一律空串）。
+    // V26.9.53：英文字母改为每次按下即 addAllTxt 直出到输入框，避免设备端候选行
+    // 渲染吞输入；此字段仅追踪需要被「候选点击」反向回退重写的字母数。
+    pendingEn: "",
     // 拼音分词显示串（如 ni'hao），在 resetResultList 中随 cval 同步更新
     cvalDisplay: "",
     resultList: [],
@@ -290,6 +286,18 @@ export default {
   },
   onRsSelect(txt) {
     this.onVibrate();
+    // 英文候选：先反向 delete 已即时上屏的 pendingEn 长度，再整词写入
+    if (this.lang === "en" && this.pendingEn) {
+      const back = this.pendingEn.length;
+      for (let i = 0; i < back; i++) this.$emit("delete", {});
+      this.pendingEn = "";
+      this.addAllTxt(txt);
+      this.resultList = [];
+      this.resultWordList = [];
+      this.setResultListAll();
+      this.downFlag = "";
+      return;
+    }
     // 检查是否为每音节首字 → 按偏移消费 cval 前缀
     var consumed = false;
     if (txt.length === 1 && this.sylTopChars.length > 0 && this.cval.length > 0) {
@@ -327,6 +335,7 @@ export default {
     switch (sign) {
       case "AC":
         this.cval = "";
+        this.pendingEn = "";
         this.clearWaiting();
         this.resetResultList();
         break;
@@ -334,11 +343,17 @@ export default {
         // 仅保留 中文/英文 两种输入法（已按需求移除日文）
         this.lang = this.lang === "cn" ? "en" : "cn";
         this.cval = "";
+        this.pendingEn = "";
         this.clearWaiting();
         this.resetResultList();
         break;
       case "D":
-        if (this.waitingIndex >= 0) {
+        if (this.lang === "en" && this.pendingEn) {
+          // 英文模式：候选前缀里有字母时，退格先撤一个 pendingEn 字符（同时撤输入框那一格）
+          this.pendingEn = this.pendingEn.slice(0, -1);
+          this.$emit("delete", {});
+          this.resetResultList();
+        } else if (this.waitingIndex >= 0) {
           this.clearWaiting();
           this.resetResultList();
         } else if (this.cval.length > 0) {
@@ -349,11 +364,9 @@ export default {
         }
         break;
       case "space":
-        // 空格键强制上屏当前 cval（英文模式键盘兜底：候选不出现时用户可点空格提交）
-        if (this.cval) {
-          this.addAllTxt(this.cval);
-          this.cval = "";
-          this.clearWaiting();
+        // 英文：候选前缀到此结束（后续键不再作为该段候选的一部分）
+        if (this.lang === "en") {
+          this.pendingEn = "";
           this.resultList = [];
           this.resultWordList = [];
           this.setResultListAll();
@@ -384,6 +397,7 @@ export default {
         this.numFlag = true;
         this.numFlag_jp = false;
         this.cval = "";
+        this.pendingEn = "";
         this.clearWaiting();
         this.resetResultList();
         break;
@@ -391,12 +405,15 @@ export default {
         this.numFlag = true;
         this.numFlag_jp = true;
         this.cval = "";
+        this.pendingEn = "";
         this.clearWaiting();
         this.resetResultList();
         break;
       case "switchCn":
         this.numFlag = false;
         this.numFlag_jp = false;
+        this.pendingEn = "";
+        this.resetResultList();
         break;
       case "switchUpper":
         this.upperFlag = true;
@@ -459,34 +476,22 @@ export default {
     this.cvalDisplay = (this.lang === "cn")
       ? SimpleInputMethod.getSegmentedDisplay(this.cval + watingStr)
       : (this.cval + watingStr);
+    // 英文模式：候选行仅基于 pendingEn（字母已即时上屏到输入框），
+    // cval 只承载中文/日文的拼音缓冲。
+    if (this.lang === "en") {
+      if (!this.pendingEn) {
+        this.resultList = [];
+        this.resultWordList = [];
+        this.setResultListAll();
+        return;
+      }
+      this.applyEnglishCandidates(this.pendingEn);
+      return;
+    }
     if (!(this.cval + watingStr)) {
       this.resultList = [];
       this.resultWordList = [];
       this.setResultListAll();
-      return;
-    }
-    // 英文模式：符号联想（逻辑对齐中文——第一个候选为输入本身，随后为元素符号前缀联想）
-    if (this.lang === "en") {
-      try {
-        this.applyEnglishCandidates(this.cval + watingStr);
-      } catch (err) {
-        _diag('en catch: ' + (err && (err.message || err)));
-      }
-      if (!_diagEnKey) {
-        _diagEnKey = true
-        _diag('en key cval=' + (this.cval + watingStr) +
-          ' rw=' + (this.resultWordList && this.resultWordList.length) +
-          ' r0=' + (this.resultRow0 && this.resultRow0.length) +
-          ' cap=' + parseInt(this.maxlength))
-      }
-      // 兜底：候选结果为空（设备侧字典/常量索引不可用 / 模板渲染失败），
-      // 立即把当前字母直接上屏，避免键盘把输入吞在小字行。
-      if (!this.resultRow0 || this.resultRow0.length === 0) {
-        const pending = this.cval;
-        this.cval = "";
-        this.clearWaiting();
-        if (pending) this.addAllTxt(pending);
-      }
       return;
     }
     if (this.lang !== "cn" && this.lang !== "jp") {
@@ -500,21 +505,13 @@ export default {
 
   /**
    * 英文符号联想：输入前缀 → [输入本身, 前缀补全候选…]。
-   * 与中文整词上屏路径完全一致（resultWordList → resultRow0 → onRsSelect 整词消费），
-   * 如输入 c → [c, ca, cd, ce, cl, co, cr, cs, cu]（Ca/Cd/Ce/Cl… 的小写拼接）。
+   * 与中文共享 resultWordList → resultRow0 展示管道；用户点候选时 onRsSelect
+   * 按 pendingEn 长度反向 delete 后把整词一次性写入输入框。
    */
   applyEnglishCandidates(input) {
     const out = [input];
-    if (!_diagEnProbe) {
-      _diagEnProbe = true
-      try {
-        const probe = englishSymbolIndex()
-        _diag('probe idx=' + (probe && Object.keys(probe).length) + ' cHits=' + (probe && probe.c && probe.c.length))
-      } catch (e) {
-        _diag('probe ERR: ' + (e && (e.message || e)))
-      }
-    }
-    const hits = englishSymbolIndex()[input.toLowerCase()];
+    const idx = englishSymbolIndex();
+    const hits = idx && idx[input.toLowerCase()];
     if (hits) {
       for (let i = 0; i < hits.length && out.length < 13; i++) {
         // rest 为空表示整个符号即输入本身（与 out[0] 重复），跳过
@@ -654,9 +651,11 @@ export default {
     if ((this.lang === 'cn' || this.lang === 'jp')  && !this.numFlag) {
       this.cval += num.toLowerCase();
     } else if (this.lang === "en" && !this.numFlag) {
-      // 英文符号联想模式：字母先聚到 cval，由候选行展示联想（对齐中文输入逻辑），
-      // 点候选整体/逐键均可；尊重大小写锁定（upperFlag 大写）。
-      this.cval += this.upperFlag ? num.toUpperCase() : num.toLowerCase();
+      // 英文：即时上屏 + 前缀追踪。候选行只是可选辅助（点候选时按 pendingEn 长度
+      // 反向 delete 后写入整词），模板渲染失败也不影响键盘可用性。
+      const ch = this.upperFlag ? num.toUpperCase() : num.toLowerCase();
+      this.pendingEn += ch;
+      this.addAllTxt(ch);
     } else {
       this.addAllTxt(num);
     }
@@ -678,6 +677,13 @@ export default {
   },
   watchHidePropsChange(newV, oldV) {
     this.$emit("visibilityChange", { visible: newV });
+    // 键盘显隐切换时清空英文候选前缀（下次弹出从空状态开始，不会给旧段做“替换”）
+    if (this.pendingEn) {
+      this.pendingEn = "";
+      this.resultList = [];
+      this.resultWordList = [];
+      this.setResultListAll();
+    }
     if (newV === false) {
       // 键盘从隐藏切到显示：首次弹出才把键盘子树建入 DOM（keyboardCreated 置 true 保活，
       // 之后 hide 切换只走 show 显隐、不再重建），同时懒初始化字典（幂等）。

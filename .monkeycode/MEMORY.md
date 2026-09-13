@@ -76,6 +76,20 @@ This file records user instructions, preferences, and teachings for reference in
   - 排查路径复用: 真机「字面进输入法但无联想/不上屏」→ 先看键盘 JS 是否吞字符（正则、字典初始化异常），
     再看候选行两侧兄弟结构；「整行宽度异常」→ 检查是否使用了 show 隐藏兄弟
 
+[Vela 输入法英文模式：字母即时上屏 + 反向 delete 换整词（不依赖候选行渲染）]
+- Date: 2026-09-13
+- Context: 用户反馈 V26.9.52 英文候选行仍不渲染但 JS 数据完整（DIAG toast 证实 rw/r0 正常）
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - 症状再诊断: englishSymbolIndex() 与 resultRow0 均正确装箱（idx=128 hits=12 rw=4 r0=4），
+    但真机 flex:1 候选 <text for> 未渲染出胶囊——即使兄弟节点全 if 也不救
+  - 修复方向: 输入可用性绝不绑死候选行；onSelect 英文分支改为 `addAllTxt(letter)`
+    + `this.pendingEn += letter`（新增私有 data 字段），候选行只作为可选辅助
+  - onRsSelect 英文分支：先按 pendingEn.length 反向 $emit('delete')（页面 onDel 逐字符回退），
+    再 addAllTxt(candidate) 一次性写入整词
+  - D/space/lang/switchNum/switchCn/AC/watchHide 全量清 pendingEn，避免跨段串扰
+  - 中文/日文模式仍走 cval + getResultByWord 异步候选路径，不受影响
+
 [Vela 列表滑动性能：splice 增量追加优于 concat；方程式文本懒计算]
 - Date: 2026-09-05
 - Context: Discovered by Agent while 优化化学工具箱列表滑动卡顿（V26.9.47）
