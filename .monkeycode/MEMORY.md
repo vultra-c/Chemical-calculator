@@ -59,18 +59,22 @@ This file records user instructions, preferences, and teachings for reference in
   - 同类 CSS 限制: 不支持后代选择器(.a .b),构建期告警「Selector type unsupport Descendant Selector」,样式静默失效
   - 完整 UI 规范已固化在仓库根目录 VELA_UI_SKILL.md,新页面开发先读它
 
-[Vela 真机坑: 常驻节点两侧兄弟用 if 增删会连累其停止渲染]
-- Date: 2026-09-13
-- Context: Discovered by Agent while 修复英文键盘联想行永不渲染（V26.9.51）
+[Vela 真机坑: flex 兄弟节点 show=false 不塌缩 与 if 兄弟增删连累渲染 双向陷阱]
+- Date: 2026-09-13（V26.9.52 修订：此前"正确模式：改 show"的结论已过时）
+- Context: Discovered by Agent while 修复英文键盘联想行永不渲染 — V26.9.51 尝试改 show 反致控制行整体压扁
 - Category: Troubleshooting & Debugging
 - Instructions:
-  - 症状链: 胶囊候选行跨 cn/en 常驻，两侧语言/大小写按钮仍用 if——切换 lang 时按钮增删，
-    夹在中间的存续候选行真机上停止渲染（打字只进键盘小字行、联想不上屏）；构建/模拟均正常，仅真机可复现
-  - 正确模式: 同一父容器内、夹在常驻节点两侧的显隐类按钮一律用 show 不用 if（节点结构恒定、只切显隐），
-    InputMethod 控制行已全量改 show（V26.9.51）
-  - 与此配套的页面层坑: 页面 onInput 字母正则 ^[A-Za-z]$ 只收单字符会把键盘整词候选提交静默丢弃，
-    接收 IME 整词提交需按原单字符规则逐字符处理
-  - 排查路径复用: 真机「字面进了输入法但无联想/不上屏」→ 先怀疑目标行两侧兄弟的 if 增删，再查接收端正则
+  - 症状双向: (a) 兄弟节点用 if 增删 → 夹在中间的存续节点在真机上有几率停止渲染（构建/模拟器不重现）;
+    (b) 兄弟节点用 show=false → 真机上节点仍保留在 flex 布局中占位，容器 flex 会把整行按钮均匀压扁，
+    表现为「整行按钮变窄、候选胶囊行完全被挤没」
+  - Show 不塌缩是设备侧行为（与部分文档描述相反），Vela 项目一律不能把 show=false 当作「塌陷式隐藏」
+  - 优先保持结构恒定：显隐切换按钮若必须共存，用「固定槽位 + 内部 img/文案数据绑定」而非整块显隐；
+    InputMethod 控制行 V26.9.52 已回退 if（历史兄弟结构真机可用），show 方案不可行
+  - 页面层与输入法兜底（防吞输入）：onInput 字母正则必须允许多字符整词候选（ca/cu）；
+    输入法 resetResultList 英文分支要 try/catch + 候选空即直出 cval；space 键无论中英都先 flush cval，
+    确保候选行渲染失败时键盘至少能用
+  - 排查路径复用: 真机「字面进输入法但无联想/不上屏」→ 先看键盘 JS 是否吞字符（正则、字典初始化异常），
+    再看候选行两侧兄弟结构；「整行宽度异常」→ 检查是否使用了 show 隐藏兄弟
 
 [Vela 列表滑动性能：splice 增量追加优于 concat；方程式文本懒计算]
 - Date: 2026-09-05
