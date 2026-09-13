@@ -143,8 +143,16 @@
 <script>
 import vibrator from "@system.vibrator";
 import device from '@system.device'
+import prompt from '@system.prompt'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
 import { englishSymbolIndex } from "../../common/logic/elements.js";
+// V26.9.52 DIAG — 英文键盘候选不上屏一次性排查提示，锁定根因后可移除
+let _diagEnProbe = false
+let _diagEnKey = false
+function _diag(msg) {
+  try { prompt.showToast({ message: String(msg), duration: 3000 }) } catch (e) {}
+  try { console.error('[IME-DIAG] ' + msg) } catch (e) {}
+}
 function doSearchDic(word, lang, cb) {
   if (!word) {
     cb({ chars: [], multi: null });
@@ -462,8 +470,14 @@ export default {
       try {
         this.applyEnglishCandidates(this.cval + watingStr);
       } catch (err) {
-        // 常量索引或 Symbol/for-in 兼容问题：候选构建异常时走直出兜底
-        console.warn('[IME] en applyEnglishCandidates failed:', err && err.message);
+        _diag('en catch: ' + (err && (err.message || err)));
+      }
+      if (!_diagEnKey) {
+        _diagEnKey = true
+        _diag('en key cval=' + (this.cval + watingStr) +
+          ' rw=' + (this.resultWordList && this.resultWordList.length) +
+          ' r0=' + (this.resultRow0 && this.resultRow0.length) +
+          ' cap=' + parseInt(this.maxlength))
       }
       // 兜底：候选结果为空（设备侧字典/常量索引不可用 / 模板渲染失败），
       // 立即把当前字母直接上屏，避免键盘把输入吞在小字行。
@@ -491,6 +505,15 @@ export default {
    */
   applyEnglishCandidates(input) {
     const out = [input];
+    if (!_diagEnProbe) {
+      _diagEnProbe = true
+      try {
+        const probe = englishSymbolIndex()
+        _diag('probe idx=' + (probe && Object.keys(probe).length) + ' cHits=' + (probe && probe.c && probe.c.length))
+      } catch (e) {
+        _diag('probe ERR: ' + (e && (e.message || e)))
+      }
+    }
     const hits = englishSymbolIndex()[input.toLowerCase()];
     if (hits) {
       for (let i = 0; i < hits.length && out.length < 13; i++) {
