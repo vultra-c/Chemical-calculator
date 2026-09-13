@@ -81,14 +81,20 @@
             </div>
           </scroll>
         </div>
-        <!-- 控制行：按钮一律用 if 而非 show —— 真机上 show=false 不塌缩仍占布局宽度，
-             曾致整行 408px 按钮在 336px 屏上被 flex 压成窄条（V26.9.51 事故截图） -->
+        <!-- 控制行：5 槽位恒定不变，DOM 结构在任何 lang/numFlag 组合都一样，
+             避免兄弟 if 增删连累候选行渲染（真机 Vela 已知坑，见 MEMORY）。
+             各槽位靠 class 切换 width / flex 让位，内部 img 用 if 只切换图像。
+             另外 en 模式下 5 键总宽 60×4 + 6 cand-margin + 4×3 侧 margin = 258px，
+             324px 可用宽度里给 flex:1 候选行留 66px 装 chip（旧版 94+94 溢出 2px 使 cand=0） -->
         <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
-          <div style="width: 60px;height: 60px;" if="{{downFlag==='' && !numFlag && lang==='cn'}}">
-            <img src="./assets/horizontal/cn.png" style="width: 60px;height: 60px;" @click="onBtnClick('lang')" />
+          <!-- S1 语言切换 / 返回字母键盘 -->
+          <div class="{{numFlag?'ks-1st-159':'ks-1st-60'}}">
+            <img if="{{!numFlag && lang==='cn'}}" src="./assets/horizontal/cn.png" style="width: 60px;height: 60px;" @click="onBtnClick('lang')" />
+            <img if="{{!numFlag && lang==='en'}}" src="./assets/horizontal/en.png" style="width: 60px;height: 60px;" @click="onBtnClick('lang')" />
+            <img if="{{numFlag}}" src="./assets/horizontal/back2.png" style="width: 159px;height: 60px;" @click="onBtnClick('switchCn')" />
           </div>
-          <div if="{{(lang === 'cn' || lang === 'jp' || lang === 'en') && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
-            <!-- 候选横滚行：整词在前、单字随后（拼音已在键盘上方独立小字行显示，这里不放 cval） -->
+          <!-- S2 候选横滚（整词在前、单字随后；num 模式让位） -->
+          <div class="{{numFlag?'ks-cand-off':'ks-cand'}}">
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
@@ -96,26 +102,19 @@
             </scroll>
             <img if="{{resultRow0.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
-          <div style="width: 60px;height: 60px;" if="{{downFlag==='' && !numFlag && lang==='en'}}">
-            <img src="./assets/horizontal/en.png" style="width: 60px;height: 60px;" @click="onBtnClick('lang')" />
+          <!-- S3 大小写切换（非 en 或非字母面板时 class width:0 让位） -->
+          <div class="{{(!numFlag && lang==='en')?'ks-mid-60':'ks-mid-0'}}">
+            <img if="{{!numFlag && lang==='en' && upperFlag}}" src="./assets/horizontal/bigA.png" style="width: 60px;height: 60px;" @click="onBtnClick('switchLow')" />
+            <img if="{{!numFlag && lang==='en' && !upperFlag}}" src="./assets/horizontal/a.png" style="width: 60px;height: 60px;" @click="onBtnClick('switchUpper')" />
           </div>
-          <div style="width: 94px;height: 60px;margin-left: 4px;" if="{{downFlag==='' && upperFlag && lang==='en' && !numFlag}}">
-            <img src="./assets/horizontal/bigA.png" style="width: 94px;height: 60px;" @click="onBtnClick('switchLow')" />
+          <!-- S4 数字/符号面板切换 -->
+          <div class="{{(!numFlag && lang==='en')?'ks-mid-60':'ks-mid-0'}}">
+            <img if="{{!numFlag && lang==='en'}}" src="./assets/horizontal/123.png" style="width: 60px;height: 60px;" @click="onBtnClick('switchNum')" />
           </div>
-          <div style="width: 94px;height: 60px;margin-left: 4px;" if="{{downFlag==='' && !upperFlag && lang==='en' && !numFlag}}">
-            <img src="./assets/horizontal/a.png" style="width: 94px;height: 60px;" @click="onBtnClick('switchUpper')" />
-          </div>
-          <div style="width: 94px;height: 60px;margin-left: 4px;" if="{{downFlag==='' && !numFlag && lang==='en'}}">
-            <img src="./assets/horizontal/123.png" style="width: 94px;height: 60px;" @click="onBtnClick('switchNum')" />
-          </div>
-          <div style="width: 159px;height: 60px;" if="{{numFlag}}">
-            <img src="./assets/horizontal/back2.png" style="width: 159px;height: 60px;" @click="onBtnClick('switchCn')" />
-          </div>
-          <div style="width: 60px;height: 60px;margin-left: 4px;" if="{{!numFlag}}">
-            <img src="./assets/horizontal/del.png" style="width: 60px;height: 60px;" @click="onBtnClick('D')" />
-          </div>
-          <div style="width: 159px;height: 60px;margin-left: 4px;" else>
-            <img src="./assets/horizontal/del2.png" style="width: 159px;height: 60px;" @click="onBtnClick('D')" />
+          <!-- S5 删除 -->
+          <div class="{{numFlag?'ks-last-159':'ks-last-60'}}">
+            <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="width: 60px;height: 60px;" @click="onBtnClick('D')" />
+            <img if="{{numFlag}}" src="./assets/horizontal/del2.png" style="width: 159px;height: 60px;" @click="onBtnClick('D')" />
           </div>
         </div>
         <!-- 下展候选：改用普通 scroll + text（与阅读器搜索结果同款交互，点击稳定），
@@ -766,6 +765,30 @@ export default {
 </script>
 
 <style>
+/* ============ 控制行 5 槽位（恒定节点结构 · class 变宽避免兄弟增删）============ */
+.ks-1st-60 { width: 60px;  height: 60px; }
+.ks-1st-159 { width: 159px; height: 60px; }
+.ks-mid-60 { width: 60px;  height: 60px; margin-left: 4px; }
+.ks-mid-0  { width: 0;     height: 60px; margin-left: 0; }
+.ks-last-60 { width: 60px;  height: 60px; margin-left: 4px; }
+.ks-last-159 { width: 159px; height: 60px; margin-left: 4px; }
+.ks-cand {
+  flex: 1;
+  height: 60px;
+  margin-left: 6px;
+  background-color: #262626;
+  border-color: #333333;
+  border-width: 3px;
+  border-radius: 100px;
+  flex-direction: row;
+  align-items: center;
+}
+.ks-cand-off {
+  width: 0;
+  height: 60px;
+  margin: 0;
+  flex: 0;
+}
 .kbd-layer {
 	width:100%;
 	position:absolute;
