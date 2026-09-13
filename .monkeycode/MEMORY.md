@@ -59,6 +59,19 @@ This file records user instructions, preferences, and teachings for reference in
   - 同类 CSS 限制: 不支持后代选择器(.a .b),构建期告警「Selector type unsupport Descendant Selector」,样式静默失效
   - 完整 UI 规范已固化在仓库根目录 VELA_UI_SKILL.md,新页面开发先读它
 
+[Vela 真机坑: 常驻节点两侧兄弟用 if 增删会连累其停止渲染]
+- Date: 2026-09-13
+- Context: Discovered by Agent while 修复英文键盘联想行永不渲染（V26.9.51）
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - 症状链: 胶囊候选行跨 cn/en 常驻，两侧语言/大小写按钮仍用 if——切换 lang 时按钮增删，
+    夹在中间的存续候选行真机上停止渲染（打字只进键盘小字行、联想不上屏）；构建/模拟均正常，仅真机可复现
+  - 正确模式: 同一父容器内、夹在常驻节点两侧的显隐类按钮一律用 show 不用 if（节点结构恒定、只切显隐），
+    InputMethod 控制行已全量改 show（V26.9.51）
+  - 与此配套的页面层坑: 页面 onInput 字母正则 ^[A-Za-z]$ 只收单字符会把键盘整词候选提交静默丢弃，
+    接收 IME 整词提交需按原单字符规则逐字符处理
+  - 排查路径复用: 真机「字面进了输入法但无联想/不上屏」→ 先怀疑目标行两侧兄弟的 if 增删，再查接收端正则
+
 [Vela 列表滑动性能：splice 增量追加优于 concat；方程式文本懒计算]
 - Date: 2026-09-05
 - Context: Discovered by Agent while 优化化学工具箱列表滑动卡顿（V26.9.47）
