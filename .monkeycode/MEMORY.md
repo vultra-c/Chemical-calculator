@@ -68,6 +68,8 @@ This file records user instructions, preferences, and teachings for reference in
     (b) 兄弟节点用 show=false → 真机上节点仍保留在 flex 布局中占位，容器 flex 会把整行按钮均匀压扁，
     表现为「整行按钮变窄、候选胶囊行完全被挤没」
   - Show 不塌缩是设备侧行为（与部分文档描述相反），Vela 项目一律不能把 show=false 当作「塌陷式隐藏」
+    具体案例：InputMethod up2.png (324x67) 用 show=false 收起时图片仍在原位挡下方按键
+    （用户报「下展关闭后无法打字」，V26.9.55 已改 if）
   - 优先保持结构恒定：显隐切换按钮若必须共存，用「固定槽位 + 内部 img/文案数据绑定」而非整块显隐；
     InputMethod 控制行 V26.9.52 已回退 if（历史兄弟结构真机可用），show 方案不可行
   - 页面层与输入法兜底（防吞输入）：onInput 字母正则必须允许多字符整词候选（ca/cu）；
