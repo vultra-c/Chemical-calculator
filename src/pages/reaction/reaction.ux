@@ -97,12 +97,16 @@ export default {
       return
     }
     // 字母：段首（+、(、[ 后或数字后）自动补大写；用户主动切大写锁定时原样输出
-    if (/^[A-Za-z]$/.test(ch)) {
-      const seg = this.inputStr.split(/[+()[\]\u4e00-\u9fa5]/).pop() || ''
-      const needUpper = seg === '' || /[0-9]$/.test(seg)
-      const lower = ch.toLowerCase()
-      const upper = ch.toUpperCase()
-      this.inputStr += (needUpper && ch === lower) ? upper : ch
+    // 整词候选提交（如键盘联想上屏的 "ca"）逐字符按同一规则处理，不能整串丢弃
+    if (/^[A-Za-z]+$/.test(ch)) {
+      for (let ci = 0; ci < ch.length; ci++) {
+        const c1 = ch[ci]
+        const seg = this.inputStr.split(/[+()[\]\u4e00-\u9fa5]/).pop() || ''
+        const needUpper = seg === '' || /[0-9]$/.test(seg)
+        const lower = c1.toLowerCase()
+        const upper = c1.toUpperCase()
+        this.inputStr += (needUpper && c1 === lower) ? upper : c1
+      }
       return
     }
     // 数字、括号、小数点

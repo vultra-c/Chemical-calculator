@@ -113,8 +113,8 @@ export default {
       this.inputStr += ch
       return
     }
-    // 字母/数字：原样追加
-    if (/^[A-Za-z0-9]$/.test(ch)) {
+    // 字母/数字：原样追加（含整词候选提交，如键盘联想上屏的 "ca" 需整体收下）
+    if (/^[A-Za-z0-9]+$/.test(ch)) {
       this.inputStr += ch
       return
     }
