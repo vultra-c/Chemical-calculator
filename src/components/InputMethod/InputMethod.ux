@@ -95,8 +95,11 @@
           </div>
           <!-- S2 候选横滚（整词在前、单字随后；num 模式让位）
                内部 flex row：scroll 占 flex:1 装 chip，右侧 down 图标 30px 独立列不再绝对定位，
-               避免 chip 与箭头同区域重叠；chips 之间靠 calbtn02 padding-right 呼吸。 -->
-          <div class="{{numFlag?'ks-cand-off':'ks-cand'}}">
+               避免 chip 与箭头同区域重叠；chips 之间靠 calbtn02 padding-right 呼吸。
+               V26.9.57：无候选时整槽塌缩（而不是留一个 flex:1 的空胶囊）。
+               英文模式候选行已被取消（resultRow0 恒空），旧实现仍会渲染一个
+               深色空框并与相邻按键挤在一起 —— 这就是「联想框没去掉且与按键重叠」。 -->
+          <div class="{{(numFlag || resultRow0.length === 0)?'ks-cand-off':'ks-cand'}}">
             <scroll id="cvalWaiting" scroll-x="{{true}}" class="ks-cand-scroll">
               <div static class="ks-cand-chips">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
@@ -121,7 +124,7 @@
         </div>
         <!-- 下展候选：改用普通 scroll + text（与阅读器搜索结果同款交互，点击稳定），
              与全键盘/九键同款 list/list-item 方案（scroll+for 在本机候选展开时不稳定） -->
-        <list style="width:324px;height:210px;border-radius:18px;background-color:#262626;border:3px solid rgba(255,255,255,0.06);" if="{{downFlag==='down'}}">
+        <list style="width:324px;height:210px;border-radius:18px;background-color:#262626;border:3px solid rgba(255,255,255,0.06);" if="{{downFlag==='down' && resultRow0.length > 0}}">
           <list-item type="waitingRows67" style="width:324px;height:58px;" for="{{resultList2Grid}}" tid="flat">
             <div class="kbd-cand-row">
               <text class="kbd-cand-chip" show="{{$item.s1}}" @click="onRsSelect($item.s1)">{{$item.s1}}</text>
@@ -135,7 +138,7 @@
         </list>
         <!-- 收起箭头：if 而非 show（真机 show=false 图片仍占 324x67 布局挡住键盘，
              曾表现为「下展关闭后 up2 图残留、下方按键无法点击」）-->
-        <img static if="{{downFlag==='down'}}" style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
+        <img static if="{{downFlag==='down' && resultRow0.length > 0}}" style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
       </div></div>
       </div>
       </div>
@@ -349,6 +352,8 @@ export default {
         this.cval = "";
         this.pendingEn = "";
         this.clearWaiting();
+        // 收回下展候选面板：否则切换语言后旧面板仍挂在键盘上盖住按键
+        this.downFlag = "";
         this.resetResultList();
         break;
       case "D":
@@ -403,6 +408,7 @@ export default {
         this.cval = "";
         this.pendingEn = "";
         this.clearWaiting();
+        this.downFlag = "";
         this.resetResultList();
         break;
       case "switchNum_jp":
@@ -417,6 +423,7 @@ export default {
         this.numFlag = false;
         this.numFlag_jp = false;
         this.pendingEn = "";
+        this.downFlag = "";
         this.resetResultList();
         break;
       case "switchUpper":
@@ -797,11 +804,15 @@ export default {
   margin-right: 6px;
   flex-shrink: 0;
 }
+/* 让位槽：宽度归零后必须同时清掉背景/边框，否则真机上仍会残留一条空胶囊 */
 .ks-cand-off {
   width: 0;
   height: 60px;
   margin: 0;
   flex: 0;
+  border-width: 0;
+  background-color: rgba(38,38,38,0);
+  overflow: hidden;
 }
 .kbd-layer {
 	width:100%;
