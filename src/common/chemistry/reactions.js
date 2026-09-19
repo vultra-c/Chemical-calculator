@@ -34,9 +34,9 @@ const BEFORE_H = ['K', 'Ca', 'Na', 'Mg', 'Al', 'Zn', 'Fe', 'Sn', 'Pb']
 const INSOLUBLE = new Set([
   'AgCl', 'BaSO4', 'CaCO3', 'BaCO3', 'Ag2CO3', 'ZnCO3', 'CuCO3',
   'Cu(OH)2', 'Fe(OH)3', 'Fe(OH)2', 'Mg(OH)2', 'Al(OH)3', 'Zn(OH)2',
-  'PbSO4'
+  'PbSO4', 'MgCO3', 'PbCO3', 'AgBr', 'AgI', 'H2SiO3'
 ])
-const GASES_OUT = new Set(['CO2', 'H2', 'NH3', 'H2S'])
+const GASES_OUT = new Set(['CO2', 'H2', 'NH3', 'H2S', 'SO2'])
 
 // 分解反应库（单反应物）
 const DECOMP = {
@@ -51,7 +51,10 @@ const DECOMP = {
   NaHCO3: { cond: '加热', tag: '分解反应', p: ['Na2CO3', 'H2O', 'CO2'] },
   'Ca(HCO3)2': { cond: '加热', tag: '分解反应', p: ['CaCO3', 'H2O', 'CO2'] },
   Ag2O: { cond: '加热', tag: '分解反应', p: ['Ag', 'O2'] },
-  'CuSO4·5H2O': { cond: '加热', tag: '分解反应', p: ['CuSO4', 'H2O'] }
+  'CuSO4·5H2O': { cond: '加热', tag: '分解反应', p: ['CuSO4', 'H2O'] },
+  HClO: { cond: '光照', tag: '分解反应', p: ['HCl', 'O2'], note: '次氯酸见光分解，氯水需避光保存' },
+  NH4Cl: { cond: '加热', tag: '分解反应', p: ['NH3', 'HCl'], note: '受热分解，遇冷重新化合（白烟现象）' },
+  AgNO3: { cond: '加热', tag: '分解反应', p: ['Ag', 'NO2', 'O2'], note: '硝酸银受热分解（需避光保存的原因）' }
 }
 
 // 精确双反应物反应库（键：化学式排序后用 + 连接）
@@ -64,6 +67,56 @@ function db(keyA, keyB, products, cond, tag, note) {
 db('C', 'CO2', ['CO'], '高温', '化合反应')
 db('N2', 'O2', ['NO'], '放电', '化合反应')
 
+// 化合：氢气 / 氮 / 氨
+db('Cl2', 'H2', ['HCl'], '点燃', '化合反应')
+db('HCl', 'NH3', ['NH4Cl'], '', '化合反应', '白烟（检验氨气）')
+db('HNO3', 'NH3', ['NH4NO3'], '', '化合反应')
+db('H2', 'N2', ['NH3'], '高温、高压、催化剂', '化合反应', '合成氨工业')
+
+// 氮 / 硫氧化链
+db('NO', 'O2', ['NO2'], '', '化合反应')
+db('NO2', 'H2O', ['HNO3', 'NO'], '', '氧化还原', '硝酸工业第二步')
+db('NH3', 'O2', ['NO', 'H2O'], '催化剂、加热', '氧化还原', '氨的催化氧化（硝酸工业第一步）')
+db('SO2', 'O2', ['SO3'], '催化剂、加热', '化合反应')
+
+// 氯气系列
+db('Cl2', 'Cu', ['CuCl2'], '点燃', '化合反应')
+db('Cl2', 'Fe', ['FeCl3'], '点燃', '化合反应', '铁在氯气中燃烧生成 +3 价铁')
+db('Cl2', 'H2O', ['HCl', 'HClO'], '', '其他反应', '氯水成分复杂，久置变稀盐酸')
+db('Cl2', 'NaOH', ['NaCl', 'NaClO', 'H2O'], '', '氧化还原', '尾气处理 / 84 消毒液原理')
+
+// 高温 / 碳
+db('Fe', 'S', ['FeS'], '加热', '化合反应')
+db('C', 'H2O', ['CO', 'H2'], '高温', '置换反应', '水煤气')
+db('CaO', 'CO2', ['CaCO3'], '高温', '化合反应')
+db('CaO', 'SiO2', ['CaSiO3'], '高温', '化合反应')
+
+// 钠及其化合物（考试高频）
+db('CO2', 'Na2O', ['Na2CO3'], '', '化合反应')
+db('CO2', 'Na2O2', ['Na2CO3', 'O2'], '', '氧化还原', '过氧化钠供氧剂（呼吸面具 / 潜艇）')
+db('H2O', 'Na2O2', ['NaOH', 'O2'], '', '氧化还原', '过氧化钠与水')
+db('NaHCO3', 'NaOH', ['Na2CO3', 'H2O'], '', '复分解反应')
+
+// 铝的“两性”
+db('Al2O3', 'NaOH', ['NaAlO2', 'H2O'], '', '其他反应', '氧化铝是两性氧化物')
+db('Al(OH)3', 'NaOH', ['NaAlO2', 'H2O'], '', '其他反应', '氢氧化铝是两性氢氧化物')
+
+// 铁三角
+db('Cu', 'FeCl3', ['CuCl2', 'FeCl2'], '', '氧化还原', 'FeCl3 腐蚀铜（印刷电路板）')
+db('Fe', 'FeCl3', ['FeCl2'], '', '化合反应')
+
+// 浓硫酸特性 / 四氧化三铁混价
+db('C', 'H2SO4', ['CO2', 'SO2', 'H2O'], '加热', '氧化还原', '浓硫酸的强氧化性（稀硫酸与碳不反应）')
+db('Fe3O4', 'HCl', ['FeCl2', 'FeCl3', 'H2O'], '', '复分解反应', 'Fe3O4 中铁为 +2/+3 混合价态')
+db('Fe3O4', 'H2SO4', ['FeSO4', 'Fe2(SO4)3', 'H2O'], '', '复分解反应', 'Fe3O4 中铁为 +2/+3 混合价态')
+
+// 强氧化性酸与铜（考频高，注记区分稀浓）
+db('Cu', 'H2SO4', ['CuSO4', 'SO2', 'H2O'], '加热', '氧化还原', '浓硫酸与铜；稀硫酸不与铜反应')
+db('Cu', 'HNO3', ['Cu(NO3)2', 'NO', 'H2O'], '', '氧化还原', '稀硝酸与铜；浓硝酸生成 NO2')
+
+// 高沸点酸制低沸点酸
+db('NaCl', 'H2SO4', ['NaHSO4', 'HCl'], '加热', '复分解反应', '浓硫酸与氯化钠（制 HCl）')
+
 // 可燃物燃烧
 const COMBUST_ELEMENT = {
   C: ['CO2', '点燃'],
@@ -75,7 +128,8 @@ const COMBUST_ELEMENT = {
   Al: ['Al2O3', '点燃'],
   Cu: ['CuO', '加热'],
   Zn: ['ZnO', '点燃'],
-  Ca: ['CaO', '点燃']
+  Ca: ['CaO', '点燃'],
+  Na: ['Na2O2', '点燃']
 }
 const COMBUST_COMPOUND = {
   CO: { p: ['CO2'], cond: '点燃' },
@@ -361,6 +415,73 @@ function tryAcidCarbonate(acid, carb) {
   return { p: [salt, 'H2O', 'CO2'], cond: '', tag: '复分解反应', note }
 }
 
+/* 卤素单质置换能力顺序：F > Cl > Br > I */
+const HALOGEN_ACTIVITY = { F2: 4, Cl2: 3, Br2: 2, I2: 1 }
+const HALIDE_ACTIVITY = { Cl: 3, Br: 2, I: 1 }
+
+function tryHalogenDisplace(a, b) {
+  const hal = Object.prototype.hasOwnProperty.call(HALOGEN_ACTIVITY, a.norm)
+    ? a
+    : Object.prototype.hasOwnProperty.call(HALOGEN_ACTIVITY, b.norm) ? b : null
+  if (!hal) return null
+  const salt = hal === a ? b : a
+  const s = extractIons(salt.norm)
+  if (s.kind !== 'salt') return null
+  if (!Object.prototype.hasOwnProperty.call(HALIDE_ACTIVITY, s.anion.sym)) return null
+  if (HALOGEN_ACTIVITY[hal.norm] <= HALIDE_ACTIVITY[s.anion.sym]) {
+    return { blocked: hal.norm + ' 的非金属性不强于 ' + s.anion.sym + '，不能从其盐中置换出该卤素' }
+  }
+  const newHalide = hal.norm.slice(0, -1) // Cl2 → Cl
+  const newSalt = composeSalt(s.cation.sym, s.cation.val, newHalide, 1)
+  const displaced = s.anion.sym + '2' // Br → Br2
+  return { p: [newSalt, displaced], cond: '', tag: '置换反应' }
+}
+
+/* 金属 + 水 */
+const METAL_WATER = {
+  K: { p: ['KOH', 'H2'], cond: '', tag: '置换反应' },
+  Na: { p: ['NaOH', 'H2'], cond: '', tag: '置换反应' },
+  Ca: { p: ['Ca(OH)2', 'H2'], cond: '', tag: '置换反应' },
+  Mg: { p: ['Mg(OH)2', 'H2'], cond: '热水（缓慢）', tag: '置换反应' },
+  Fe: { p: ['Fe3O4', 'H2'], cond: '高温（水蒸气）', tag: '置换反应' }
+}
+const NO_WATER_METALS = ['Cu', 'Ag', 'Hg', 'Pt', 'Au']
+
+function tryMetalWater(a, b) {
+  const water = a.norm === 'H2O' ? a : b.norm === 'H2O' ? b : null
+  if (!water) return null
+  const metal = water === a ? b : a
+  const shape = classifyShape(metal.norm, metal.counts)
+  if (shape.kind !== 'element') return null
+  if (NO_WATER_METALS.indexOf(metal.norm) >= 0) {
+    return { blocked: metal.norm + ' 的金属活动性弱，不与水反应' }
+  }
+  const hit = METAL_WATER[metal.norm]
+  return hit ? { p: hit.p, cond: hit.cond, tag: hit.tag } : null
+}
+
+/* 铵盐 + 碱 → 氨气（检验铵根 / 实验室制氨） */
+function tryAmmoniumBase(a, b) {
+  const ix = extractIons(a.norm)
+  const iy = extractIons(b.norm)
+  const pairA = [ix, a]
+  const pairB = [iy, b]
+  const am = pairA[0].kind === 'salt' && pairA[0].cation.sym === 'NH4'
+    ? pairA
+    : pairB[0].kind === 'salt' && pairB[0].cation.sym === 'NH4' ? pairB : null
+  const ba = pairA[0].kind === 'base' && pairA[0].anion.sym === 'OH'
+    ? pairA
+    : pairB[0].kind === 'base' && pairB[0].anion.sym === 'OH' ? pairB : null
+  if (!am || !ba) return null
+  const salt = composeSalt(ba[0].cation.sym, ba[0].cation.val, am[0].anion.sym, am[0].anion.val)
+  return {
+    p: [salt, 'NH3', 'H2O'],
+    cond: '加热',
+    tag: '复分解反应',
+    note: '铵根离子检验：产生使湿润红色石蕊试纸变蓝的气体'
+  }
+}
+
 function tryBaseSourGas(base, gas) {
   const b = extractIons(base.norm)
   if (b.kind !== 'base') return null
@@ -464,6 +585,9 @@ export function analyzeList(tokensRaw) {
     candidates.push.apply(candidates, tryDB2(merged))
     const seq = [
       function () { return tryCombustion(merged[0], merged[1]) },
+      function () { return tryMetalWater(merged[0], merged[1]) || tryMetalWater(merged[1], merged[0]) },
+      function () { return tryHalogenDisplace(merged[0], merged[1]) || tryHalogenDisplace(merged[1], merged[0]) },
+      function () { return tryAmmoniumBase(merged[0], merged[1]) || tryAmmoniumBase(merged[1], merged[0]) },
       function () { return tryReduction(merged[0], merged[1]) },
       function () { return tryWaterPairs(merged[0], merged[1]) },
       function () { return tryMetalAcid(merged[0], merged[1]) || tryMetalAcid(merged[1], merged[0]) },

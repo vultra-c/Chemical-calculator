@@ -3,12 +3,59 @@
     <scroll class="scroll" scroll-y="true">
       <div class="inner">
         <div class="header">
-          <text class="back" onclick="goBack">‹</text>
+          <input class="btn-back" type="button" value="‹ 返回" onclick="goBack"></input>
           <text class="h-title">元素数据查询</text>
         </div>
 
-        <input class="ipt" type="text" placeholder="搜索：符号 / 名称 / 序号" value="{{keyword}}" onchange="onSearch"></input>
-        <text class="count">{{list.length}} 种元素 · 数据离线内置</text>
+        <div class="ipt-view" onclick="noop">
+          <text class="ipt-text {{keyword ? '' : 'ph'}}">{{keyword || '搜索：符号 / 名称 / 序号'}}</text>
+          <text class="caret">|</text>
+        </div>
+
+        <div class="kb-wrap">
+          <div class="kb-row">
+            <input class="key num" type="button" value="1" onclick="keyPress('1')"></input>
+            <input class="key num" type="button" value="2" onclick="keyPress('2')"></input>
+            <input class="key num" type="button" value="3" onclick="keyPress('3')"></input>
+            <input class="key num" type="button" value="4" onclick="keyPress('4')"></input>
+            <input class="key num" type="button" value="5" onclick="keyPress('5')"></input>
+            <input class="key num" type="button" value="6" onclick="keyPress('6')"></input>
+            <input class="key num" type="button" value="7" onclick="keyPress('7')"></input>
+            <input class="key num" type="button" value="8" onclick="keyPress('8')"></input>
+          </div>
+          <div class="kb-row">
+            <input class="key" type="button" value="Q" onclick="keyPress('q')"></input>
+            <input class="key" type="button" value="W" onclick="keyPress('w')"></input>
+            <input class="key" type="button" value="E" onclick="keyPress('e')"></input>
+            <input class="key" type="button" value="R" onclick="keyPress('r')"></input>
+            <input class="key" type="button" value="T" onclick="keyPress('t')"></input>
+            <input class="key" type="button" value="Y" onclick="keyPress('y')"></input>
+            <input class="key" type="button" value="U" onclick="keyPress('u')"></input>
+            <input class="key" type="button" value="I" onclick="keyPress('i')"></input>
+          </div>
+          <div class="kb-row">
+            <input class="key" type="button" value="O" onclick="keyPress('o')"></input>
+            <input class="key" type="button" value="P" onclick="keyPress('p')"></input>
+            <input class="key" type="button" value="A" onclick="keyPress('a')"></input>
+            <input class="key" type="button" value="S" onclick="keyPress('s')"></input>
+            <input class="key" type="button" value="D" onclick="keyPress('d')"></input>
+            <input class="key" type="button" value="F" onclick="keyPress('f')"></input>
+            <input class="key" type="button" value="G" onclick="keyPress('g')"></input>
+            <input class="key" type="button" value="H" onclick="keyPress('h')"></input>
+          </div>
+          <div class="kb-row">
+            <input class="key" type="button" value="J" onclick="keyPress('j')"></input>
+            <input class="key" type="button" value="K" onclick="keyPress('k')"></input>
+            <input class="key" type="button" value="L" onclick="keyPress('l')"></input>
+            <input class="key" type="button" value="B" onclick="keyPress('b')"></input>
+            <input class="key" type="button" value="N" onclick="keyPress('n')"></input>
+            <input class="key" type="button" value="M" onclick="keyPress('m')"></input>
+            <input class="key clear" type="button" value="清空" onclick="clearKw"></input>
+            <input class="key del" type="button" value="⌫" onclick="keyBack"></input>
+          </div>
+        </div>
+
+        <text class="count">{{list.length}} 种元素 · 数据离线内置 · {{buildTag}}</text>
 
         <div class="card row" for="(idx, e) in list">
           <text class="z">{{e.z}}</text>
@@ -29,15 +76,15 @@ import router from '@system.router'
 import { ELEMENTS } from '../../common/chemistry/elements.js'
 
 export default {
-  data: function () {
-    return {
-      keyword: '',
-      list: ELEMENTS,
-      touchStartX: 0,
-      touchStartY: 0,
-      touchStartTime: 0
-    }
+  private: {
+    buildTag: 'v1.2.0',
+    keyword: '',
+    list: ELEMENTS,
+    touchStartX: 0,
+    touchStartY: 0,
+    touchStartTime: 0
   },
+
   goBack() {
     router.back()
   },
@@ -61,9 +108,21 @@ export default {
       router.back()
     }
   },
-  onSearch(evt) {
-    const k = String(evt.value || '').trim().toLowerCase()
-    this.keyword = evt.value
+  noop() {},
+  keyPress(ch) {
+    this.keyword = this.keyword + ch
+    this.applyFilter()
+  },
+  keyBack() {
+    this.keyword = this.keyword.slice(0, -1)
+    this.applyFilter()
+  },
+  clearKw() {
+    this.keyword = ''
+    this.applyFilter()
+  },
+  applyFilter() {
+    const k = this.keyword.trim().toLowerCase()
     if (!k) {
       this.list = ELEMENTS
       return
@@ -95,25 +154,77 @@ export default {
 .header {
   flex-direction: row;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-.back {
+.btn-back {
+  background-color: #151b23;
   color: #8a97a5;
-  font-size: 44px;
-  padding-right: 24px;
+  font-size: 22px;
+  border-radius: 14px;
+  padding: 10px 20px;
+  margin-right: 18px;
+  flex-shrink: 0;
 }
 .h-title {
   color: #f2f6f8;
   font-size: 32px;
   font-weight: bold;
 }
-.ipt {
+.ipt-view {
+  flex-direction: row;
+  align-items: center;
   background-color: #151b23;
   border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  width: 100%;
+}
+.ipt-text {
   color: #f2f6f8;
   font-size: 25px;
-  padding: 16px 20px;
-  margin-bottom: 12px;
+  flex-grow: 1;
+}
+.ipt-text.ph {
+  color: #55606c;
+}
+.caret {
+  color: #34d399;
+  font-size: 25px;
+}
+.kb-wrap {
+  flex-direction: column;
+  background-color: #10161d;
+  border-radius: 22px;
+  padding: 14px 12px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.kb-row {
+  flex-direction: row;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.key {
+  background-color: #1c2530;
+  color: #e8eef3;
+  font-size: 22px;
+  border-radius: 12px;
+  padding: 12px 0;
+  width: 64px;
+  margin: 0 5px;
+  text-align: center;
+}
+.key.num {
+  background-color: #232f3c;
+  color: #7fd7b6;
+}
+.key.clear {
+  background-color: #2a3644;
+  color: #fbbf24;
+}
+.key.del {
+  background-color: rgba(248, 113, 113, 0.16);
+  color: #f87171;
 }
 .count {
   color: #55606c;
@@ -128,9 +239,6 @@ export default {
   flex-direction: row;
   align-items: center;
   width: 100%;
-}
-.row {
-  flex-direction: row;
 }
 .z {
   color: #55606c;

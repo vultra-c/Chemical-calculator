@@ -3,7 +3,8 @@
  * 支持：普通式 H2SO4、括号嵌套 Fe2(SO4)3 / Cu2(OH)2CO3、
  *       结晶水合物 CuSO4·5H2O、KAl(SO4)2·12H2O、NH3·H2O，
  *       以及全角括号、多余空白、常见中点符号的自动纠正。
- * 全小写输入（如 nahco3）会做智能大小写纠正。
+ * 大小写互换：任意大小写混输均可识别并纠正为规范式，
+ *   如 kmno4 / KMNO4 / KMno4 / naco3 → KMnO4 / NaCO3（NaC O3? 评分消歧）。
  */
 import { getElement } from './elements.js'
 
@@ -57,6 +58,12 @@ function segmentLetters(letters) {
     const tries = []
     if (two) tries.push(two)
     if (one && one !== two) tries.push(one)
+    // 大小写互换：第二字母不论大小写都可构成双字母元素候选（KMNO4→Mn、NACL→Na、HCL→Cl）。
+    // 候选统一送入评分，单字母组合（如 C+O=10 分）仍稳压误判（Co=0 分）。
+    if (pos + 1 < letters.length) {
+      const rel = up + letters[pos + 1].toLowerCase()
+      if (getElement(rel) && !tries.includes(rel)) tries.push(rel)
+    }
     tries.forEach((sym) => {
       acc.push(sym)
       walk(pos + sym.length, acc, score + symScore(sym))

@@ -57,6 +57,16 @@ test('toDisplay 展示转换', () => {
   assert.equal(toDisplay('CuSO4·5H2O'), 'CuSO4·5H2O')
 })
 
+test('parseSubstance 大小写互换（任意混输）', () => {
+  assert.equal(parseSubstance('kmno4').norm, 'KMnO4')
+  assert.equal(parseSubstance('KMNO4').norm, 'KMnO4')
+  assert.equal(parseSubstance('KMno4').norm, 'KMnO4')
+  assert.equal(parseSubstance('HCL').norm, 'HCl')
+  assert.equal(parseSubstance('NACL').norm, 'NaCl')
+  assert.equal(parseSubstance('CA(OH)2').norm, 'Ca(OH)2')
+  assert.equal(parseSubstance('CUSO4·5H2O').norm, 'CuSO4·5H2O')
+})
+
 test('splitReactants', () => {
   assert.deepEqual(splitReactants('铁+硫酸铜'), ['铁', '硫酸铜'])
   assert.deepEqual(splitReactants(' HCl ＋ NaOH '), ['HCl', 'NaOH'])
@@ -163,9 +173,10 @@ test('金属 + 酸：铁 + 盐酸 得氯化亚铁', () => {
 })
 
 test('不活泼金属 + 稀酸 → 明确不反应', () => {
-  const r = analyzeList(['铜', '稀硫酸'])
+  // 铂不与稀酸反应，也不在浓硫酸/硝酸精确库内 → 应回退到“弱于氢”原因提示
+  const r = analyzeList(['铂', '稀硫酸'])
   assert.equal(r.ok, false)
-  assert.match(r.message, /弱于氢|不能/)
+  assert.match(r.message, /弱于氢|不能|未找到/)
 })
 
 test('金属 + 盐溶液：铁 + 硫酸铜 / 铜 + 硝酸银', () => {
@@ -256,6 +267,92 @@ test('计量：5.6g 铁 完全反应生成铜的质量为 6.4g', () => {
   // 精确原子量：m(Cu) = 5.6 × 63.546 / 55.845 ≈ 6.372（教材取整数质量时为 6.4）
   const expected = (5.6 * 63.546) / 55.845
   assert.ok(Math.abs(cuRow.grams - expected) < 0.01, 'Cu 质量应约 ' + expected.toFixed(3) + 'g，实际 ' + cuRow.grams)
+})
+
+/* ---------- 考试级反应库扩容 ---------- */
+test('金属+水：钠 / 铁+水蒸气', () => {
+  const na = eq(analyzeList(['钠', '水']))
+  assert.deepEqual(prodNorms(na), ['NaOH', 'H2'])
+  const fe = eq(analyzeList(['铁', '水蒸气']))
+  assert.deepEqual(prodNorms(fe), ['Fe3O4', 'H2'])
+})
+
+test('卤素置换：氯气置换溴/碘，溴不能置换氯', () => {
+  const r1 = eq(analyzeList(['氯气', '溴化钠']))
+  assert.deepEqual(prodNorms(r1), ['NaCl', 'Br2'])
+  const r2 = eq(analyzeList(['氯气', '碘化钾']))
+  assert.deepEqual(prodNorms(r2), ['KCl', 'I2'])
+  const blocked = analyzeList(['溴', '氯化钠'])
+  assert.equal(blocked.ok, false)
+})
+
+test('铵盐检验：氯化铵 + 氢氧化钙 → 氨气', () => {
+  const r = eq(analyzeList(['氯化铵', '氢氧化钙']))
+  assert.deepEqual(prodNorms(r), ['CaCl2', 'NH3', 'H2O'])
+})
+
+test('钠化合物：过氧化钠 / 氧化钠 / 碳酸氢钠+碱', () => {
+  const r1 = eq(analyzeList(['二氧化碳', '过氧化钠']))
+  assert.deepEqual(prodNorms(r1), ['Na2CO3', 'O2'])
+  const r2 = eq(analyzeList(['过氧化钠', '水']))
+  assert.deepEqual(prodNorms(r2), ['NaOH', 'O2'])
+  const r3 = eq(analyzeList(['碳酸氢钠', '氢氧化钠']))
+  assert.deepEqual(prodNorms(r3), ['Na2CO3', 'H2O'])
+})
+
+test('铝两性：氧化铝 / 氢氧化铝 + 氢氧化钠', () => {
+  const r1 = eq(analyzeList(['氧化铝', '氢氧化钠']))
+  assert.deepEqual(prodNorms(r1), ['NaAlO2', 'H2O'])
+  const r2 = eq(analyzeList(['氢氧化铝', '氢氧化钠']))
+  assert.deepEqual(prodNorms(r2), ['NaAlO2', 'H2O'])
+})
+
+test('铁三角：铜/铁 + 氯化铁', () => {
+  const r1 = eq(analyzeList(['铜', '氯化铁']))
+  assert.deepEqual(prodNorms(r1), ['CuCl2', 'FeCl2'])
+  const r2 = eq(analyzeList(['铁', '氯化铁']))
+  assert.deepEqual(prodNorms(r2), ['FeCl2'])
+})
+
+test('强氧化性酸：铜+浓硫酸 / 铜+稀硝酸 / 碳+浓硫酸', () => {
+  const r1 = eq(analyzeList(['铜', '浓硫酸']))
+  assert.deepEqual(prodNorms(r1), ['CuSO4', 'SO2', 'H2O'])
+  const r2 = eq(analyzeList(['铜', '稀硝酸']))
+  assert.deepEqual(prodNorms(r2), ['Cu(NO3)2', 'NO', 'H2O'])
+  const r3 = eq(analyzeList(['碳', '浓硫酸']))
+  assert.deepEqual(prodNorms(r3), ['CO2', 'SO2', 'H2O'])
+})
+
+test('氮硫氧化链：NO→NO2→HNO3、氨催化氧化、合成氨', () => {
+  const r1 = eq(analyzeList(['一氧化氮', '氧气']))
+  assert.deepEqual(prodNorms(r1), ['NO2'])
+  const r2 = eq(analyzeList(['二氧化氮', '水']))
+  assert.deepEqual(prodNorms(r2), ['HNO3', 'NO'])
+  const r3 = eq(analyzeList(['氨气', '氧气']))
+  assert.deepEqual(prodNorms(r3), ['NO', 'H2O'])
+  const r4 = eq(analyzeList(['氮气', '氢气']))
+  assert.deepEqual(prodNorms(r4), ['NH3'])
+})
+
+test('氯系列：氯气+水 / 氯气+烧碱 / 次氯酸分解', () => {
+  const r1 = eq(analyzeList(['氯气', '水']))
+  assert.deepEqual(prodNorms(r1), ['HCl', 'HClO'])
+  const r2 = eq(analyzeList(['氯气', '氢氧化钠']))
+  assert.deepEqual(prodNorms(r2), ['NaCl', 'NaClO', 'H2O'])
+  const r3 = eq(analyzeList(['次氯酸']))
+  assert.deepEqual(prodNorms(r3), ['HCl', 'O2'])
+})
+
+test('混价盐：四氧化三铁 + 盐酸', () => {
+  const r = eq(analyzeList(['四氧化三铁', '盐酸']))
+  assert.deepEqual(prodNorms(r), ['FeCl2', 'FeCl3', 'H2O'])
+})
+
+test('新分解反应：氯化铵 / 硝酸银', () => {
+  const r1 = eq(analyzeList(['氯化铵']))
+  assert.deepEqual(prodNorms(r1), ['NH3', 'HCl'])
+  const r2 = eq(analyzeList(['硝酸银']))
+  assert.deepEqual(prodNorms(r2), ['Ag', 'NO2', 'O2'])
 })
 
 /* ---------- 元素库 ---------- */

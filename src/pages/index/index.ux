@@ -9,28 +9,20 @@
     </div>
 
     <div class="menu">
-      <div class="card menu-card primary" onclick="goCalc">
-        <div class="dot dot-teal"></div>
-        <div class="menu-text">
-          <text class="menu-title">反应计算</text>
-          <text class="menu-desc">输入反应物，自动推导配平</text>
-        </div>
-        <text class="arrow">›</text>
+      <div class="card menu-card primary">
+        <input class="menu-btn" type="button" value="反应计算  ›" onclick="goCalc"></input>
+        <text class="menu-desc">输入反应物，自动推导配平</text>
       </div>
 
-      <div class="card menu-card" onclick="goElements">
-        <div class="dot dot-amber"></div>
-        <div class="menu-text">
-          <text class="menu-title">元素数据</text>
-          <text class="menu-desc">相对原子质量离线查询</text>
-        </div>
-        <text class="arrow">›</text>
+      <div class="card menu-card">
+        <input class="menu-btn" type="button" value="元素数据  ›" onclick="goElements"></input>
+        <text class="menu-desc">相对原子质量离线查询</text>
       </div>
     </div>
 
     <div class="spacer"></div>
     <text class="foot" if="{{navError}}">{{navError}}</text>
-    <text class="foot">支持化学式 / 中文名称 · 右滑退出</text>
+    <text class="foot">支持化学式 / 中文名称 · 右滑退出 · {{buildTag}}</text>
   </div>
 </template>
 
@@ -39,14 +31,14 @@ import router from '@system.router'
 import app from '@system.app'
 
 export default {
-  data: function () {
-    return {
-      navError: '',
-      touchStartX: 0,
-      touchStartY: 0,
-      touchStartTime: 0
-    }
+  private: {
+    buildTag: 'v1.1.0',
+    navError: '',
+    touchStartX: 0,
+    touchStartY: 0,
+    touchStartTime: 0
   },
+
   goCalc() {
     this.nav('pages/calc')
   },
@@ -76,7 +68,6 @@ export default {
     const dy = endY - this.touchStartY
     const dt = Date.now() - this.touchStartTime
     this.touchStartTime = 0
-    // 右滑：水平位移足够大、基本水平、时间较短
     if (dx > 90 && Math.abs(dy) < 70 && dt < 800) {
       try {
         app.terminate()
@@ -97,7 +88,7 @@ export default {
 .header {
   flex-direction: row;
   align-items: center;
-  margin-bottom: 44px;
+  margin-bottom: 40px;
 }
 .logo {
   width: 88px;
@@ -127,48 +118,31 @@ export default {
 .card {
   background-color: #151b23;
   border-radius: 22px;
-}
-.menu-card {
-  flex-direction: row;
-  align-items: center;
-  padding: 24px 26px;
   margin-bottom: 22px;
   width: 100%;
+}
+.menu-card {
+  flex-direction: column;
+  padding: 10px 12px;
 }
 .primary {
   border: 1px solid rgba(52, 211, 153, 0.45);
 }
-.dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 11px;
-  margin-right: 22px;
-  flex-shrink: 0;
-}
-.dot-teal {
-  background-color: #34d399;
-}
-.dot-amber {
-  background-color: #fbbf24;
-}
-.menu-text {
-  flex-direction: column;
-  flex-grow: 1;
-}
-.menu-title {
-  color: #f2f6f8;
+.menu-btn {
+  background-color: rgba(52, 211, 153, 0.12);
+  color: #34d399;
   font-size: 28px;
   font-weight: bold;
+  border-radius: 14px;
+  padding: 18px 20px;
+  width: 100%;
 }
 .menu-desc {
   color: #8a97a5;
   font-size: 19px;
-  margin-top: 6px;
-}
-.arrow {
-  color: #4a5561;
-  font-size: 34px;
-  flex-shrink: 0;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  margin-left: 6px;
 }
 .spacer {
   flex-grow: 1;

@@ -3,21 +3,72 @@
     <scroll class="scroll" scroll-y="true">
       <div class="inner">
         <div class="header">
-          <text class="back" onclick="goBack">‹</text>
+          <input class="btn-back" type="button" value="‹ 返回" onclick="goBack"></input>
           <text class="h-title">反应计算</text>
-          <text class="reset-btn" onclick="clearAll">清空</text>
+          <input class="btn-reset" type="button" value="清空" onclick="clearAll"></input>
+        </div>
+
+        <div class="mode-row">
+          <input class="mode-btn {{kbMode ? 'on' : ''}}" type="button" value="公式" onclick="setModeKb"></input>
+          <input class="mode-btn {{kbMode ? '' : 'on'}}" type="button" value="中文名" onclick="setModeZh"></input>
         </div>
 
         <div class="card block">
-          <text class="label">反应物（多种用 + 分隔，支持中文名）</text>
-          <input class="ipt" type="text" placeholder="如：铁+硫酸铜" value="{{inputText}}" onchange="onInput"></input>
-          <div class="chips">
-            <text class="chip" onclick="fillExample1()">铁＋硫酸铜</text>
-            <text class="chip" onclick="fillExample2()">碳酸钙＋盐酸</text>
-            <text class="chip" onclick="fillExample3()">过氧化氢</text>
+          <text class="label">{{kbMode ? '化学式输入（内置键盘 · 无联想）' : '中文名称输入（系统联想）'}}</text>
+          <div class="ipt-view" if="{{kbMode}}" onclick="focusKb">
+            <text class="ipt-text {{inputText ? '' : 'ph'}}">{{inputText || '如：kmno4 或 Fe+CuSO4'}}</text>
+            <text class="caret">|</text>
           </div>
-          <div class="btn-main" onclick="doAnalyze">
-            <text class="btn-main-t">推导并配平</text>
+          <input class="ipt" if="{{!kbMode}}" type="text" placeholder="如：铁+硫酸铜" value="{{inputText}}" onchange="onInput"></input>
+
+          <div class="chips">
+            <input class="chip" type="button" value="铁+硫酸铜" onclick="fillExample1"></input>
+            <input class="chip" type="button" value="碳酸钙+盐酸" onclick="fillExample2"></input>
+            <input class="chip" type="button" value="过氧化氢" onclick="fillExample3"></input>
+          </div>
+          <input class="btn-main" type="button" value="推导并配平" onclick="doAnalyze"></input>
+        </div>
+
+        <div class="kb-wrap" if="{{kbMode}}">
+          <div class="kb-row">
+            <input class="key num" type="button" value="4" onclick="keyPress('4')"></input>
+            <input class="key num" type="button" value="3" onclick="keyPress('3')"></input>
+            <input class="key num" type="button" value="2" onclick="keyPress('2')"></input>
+            <input class="key num" type="button" value="1" onclick="keyPress('1')"></input>
+            <input class="key wide" type="button" value="+" onclick="keyPress('+')"></input>
+            <input class="key wide" type="button" value="·" onclick="keyPress('·')"></input>
+            <input class="key wide" type="button" value="(" onclick="keyPress('(')"></input>
+            <input class="key wide" type="button" value=")" onclick="keyPress(')')"></input>
+          </div>
+          <div class="kb-row">
+            <input class="key" type="button" value="Q" onclick="keyPress('Q')"></input>
+            <input class="key" type="button" value="W" onclick="keyPress('W')"></input>
+            <input class="key" type="button" value="E" onclick="keyPress('E')"></input>
+            <input class="key" type="button" value="R" onclick="keyPress('R')"></input>
+            <input class="key" type="button" value="T" onclick="keyPress('T')"></input>
+            <input class="key" type="button" value="Y" onclick="keyPress('Y')"></input>
+            <input class="key" type="button" value="U" onclick="keyPress('U')"></input>
+            <input class="key" type="button" value="I" onclick="keyPress('I')"></input>
+          </div>
+          <div class="kb-row indent1">
+            <input class="key" type="button" value="O" onclick="keyPress('O')"></input>
+            <input class="key" type="button" value="P" onclick="keyPress('P')"></input>
+            <input class="key" type="button" value="A" onclick="keyPress('A')"></input>
+            <input class="key" type="button" value="S" onclick="keyPress('S')"></input>
+            <input class="key" type="button" value="D" onclick="keyPress('D')"></input>
+            <input class="key" type="button" value="F" onclick="keyPress('F')"></input>
+            <input class="key" type="button" value="G" onclick="keyPress('G')"></input>
+            <input class="key" type="button" value="H" onclick="keyPress('H')"></input>
+          </div>
+          <div class="kb-row indent2">
+            <input class="key" type="button" value="J" onclick="keyPress('J')"></input>
+            <input class="key" type="button" value="K" onclick="keyPress('K')"></input>
+            <input class="key" type="button" value="L" onclick="keyPress('L')"></input>
+            <input class="key" type="button" value="B" onclick="keyPress('B')"></input>
+            <input class="key" type="button" value="N" onclick="keyPress('N')"></input>
+            <input class="key" type="button" value="M" onclick="keyPress('M')"></input>
+            <input class="key caps" type="button" value="{{capsOn ? '⇪' : '⇧'}}" onclick="toggleCaps"></input>
+            <input class="key del" type="button" value="⌫" onclick="keyBack"></input>
           </div>
         </div>
 
@@ -31,7 +82,7 @@
           <text class="eq">{{eqLeftStr}}</text>
           <div class="arrow-row">
             <text class="arrow-line"></text>
-            <text class="arrow-txt">→</text>
+            <text class="arrow-txt">{{result.cond ? '==>' : '==>'}}</text>
             <text class="arrow-line"></text>
           </div>
           <text class="eq right">{{eqRightStr}}</text>
@@ -41,15 +92,15 @@
         <div class="card block" if="{{result}}">
           <text class="label">质量计量：选择已知质量的物质</text>
           <div class="chips">
-            <text
+            <input
               class="chip {{idx===selIdx ? 'sel' : ''}}"
+              type="button"
+              value="{{s.display}}"
               for="(idx, s) in result.substances"
-              onclick="pickSub(idx)">{{s.display}}</text>
+              onclick="pickSub(idx)"></input>
           </div>
           <input class="ipt" type="number" placeholder="输入质量（克）" value="{{massText}}" onchange="onMass"></input>
-          <div class="btn-sub" onclick="doCalcMass">
-            <text class="btn-sub-t">计算其余物质质量</text>
-          </div>
+          <input class="btn-sub" type="button" value="计算其余物质质量" onclick="doCalcMass"></input>
           <text class="mass-msg" if="{{massMsg}}">{{massMsg}}</text>
           <div class="m-row head" if="{{massRows.length}}">
             <text class="m-c">物质</text>
@@ -65,7 +116,7 @@
           </div>
         </div>
 
-        <text class="foot-tip">一键「清空」可重新开始 · 支持无限次反复计算</text>
+        <text class="foot-tip">「清空」重开 · 右滑返回 · {{buildTag}}</text>
       </div>
     </scroll>
   </div>
@@ -77,22 +128,24 @@ import { splitReactants } from '../../common/chemistry/parser.js'
 import { analyzeList, calcStoich } from '../../common/chemistry/reactions.js'
 
 export default {
-  data: function () {
-    return {
-      inputText: '',
-      result: null,
-      eqLeftStr: '',
-      eqRightStr: '',
-      errorMsg: '',
-      selIdx: 0,
-      massText: '',
-      massRows: [],
-      massMsg: '',
-      touchStartX: 0,
-      touchStartY: 0,
-      touchStartTime: 0
-    }
+  private: {
+    buildTag: 'v1.2.0',
+    kbMode: true,
+    capsOn: false,
+    inputText: '',
+    result: null,
+    eqLeftStr: '',
+    eqRightStr: '',
+    errorMsg: '',
+    selIdx: 0,
+    massText: '',
+    massRows: [],
+    massMsg: '',
+    touchStartX: 0,
+    touchStartY: 0,
+    touchStartTime: 0
   },
+
   goBack() {
     router.back()
   },
@@ -116,11 +169,28 @@ export default {
       router.back()
     }
   },
+  setModeKb() {
+    this.kbMode = true
+  },
+  setModeZh() {
+    this.kbMode = false
+  },
+  focusKb() {},
   onInput(evt) {
     this.inputText = evt.value
   },
   onMass(evt) {
     this.massText = evt.value
+  },
+  keyPress(ch) {
+    this.inputText = this.inputText + (this.capsOn ? ch : ch.toLowerCase())
+    if (this.capsOn) this.capsOn = false
+  },
+  keyBack() {
+    this.inputText = this.inputText.slice(0, -1)
+  },
+  toggleCaps() {
+    this.capsOn = !this.capsOn
   },
   fillExample1() {
     this.inputText = '铁+硫酸铜'
@@ -221,12 +291,16 @@ export default {
 .header {
   flex-direction: row;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-.back {
+.btn-back {
+  background-color: #151b23;
   color: #8a97a5;
-  font-size: 44px;
-  padding-right: 24px;
+  font-size: 22px;
+  border-radius: 14px;
+  padding: 10px 20px;
+  margin-right: 18px;
+  flex-shrink: 0;
 }
 .h-title {
   color: #f2f6f8;
@@ -234,12 +308,29 @@ export default {
   font-weight: bold;
   flex-grow: 1;
 }
-.reset-btn {
+.btn-reset {
+  background-color: rgba(248, 113, 113, 0.14);
   color: #f87171;
-  font-size: 24px;
-  border: 1px solid rgba(248, 113, 113, 0.5);
-  border-radius: 18px;
-  padding: 8px 22px;
+  font-size: 22px;
+  border-radius: 14px;
+  padding: 10px 22px;
+  flex-shrink: 0;
+}
+.mode-row {
+  flex-direction: row;
+  margin-bottom: 18px;
+}
+.mode-btn {
+  background-color: #151b23;
+  color: #8a97a5;
+  font-size: 23px;
+  border-radius: 16px;
+  padding: 14px 26px;
+  margin-right: 14px;
+}
+.mode-btn.on {
+  background-color: rgba(52, 211, 153, 0.18);
+  color: #34d399;
 }
 .card {
   background-color: #151b23;
@@ -248,7 +339,7 @@ export default {
 .block {
   flex-direction: column;
   padding: 24px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
   width: 100%;
 }
 .label {
@@ -263,6 +354,28 @@ export default {
   font-size: 27px;
   padding: 18px 20px;
   margin-bottom: 16px;
+  width: 100%;
+}
+.ipt-view {
+  flex-direction: row;
+  align-items: center;
+  background-color: #0e1319;
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.ipt-text {
+  color: #f2f6f8;
+  font-size: 27px;
+  flex-grow: 1;
+}
+.ipt-text.ph {
+  color: #55606c;
+}
+.caret {
+  color: #34d399;
+  font-size: 27px;
 }
 .chips {
   flex-direction: row;
@@ -275,44 +388,82 @@ export default {
   color: #aeb9c4;
   font-size: 21px;
   border-radius: 14px;
-  padding: 10px 18px;
+  padding: 12px 18px;
   margin-right: 12px;
   margin-bottom: 10px;
 }
 .chip.sel {
   background-color: rgba(52, 211, 153, 0.18);
   color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.55);
 }
 .btn-main {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background-image: linear-gradient(90deg, #10b981, #34d399);
+  color: #04231a;
+  font-size: 28px;
+  font-weight: bold;
   border-radius: 18px;
   padding: 20px;
   margin-top: 4px;
   width: 100%;
 }
-.btn-main-t {
-  color: #04231a;
-  font-size: 28px;
-  font-weight: bold;
-}
 .btn-sub {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background-color: rgba(52, 211, 153, 0.14);
+  color: #34d399;
+  font-size: 25px;
+  font-weight: bold;
   border-radius: 18px;
   padding: 18px;
   margin-top: 4px;
   width: 100%;
 }
-.btn-sub-t {
-  color: #34d399;
-  font-size: 25px;
-  font-weight: bold;
+.kb-wrap {
+  flex-direction: column;
+  background-color: #10161d;
+  border-radius: 22px;
+  padding: 16px 14px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+.kb-row {
+  flex-direction: row;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.kb-row.indent1 {
+  margin-left: 18px;
+  margin-right: -18px;
+  flex-direction: row;
+}
+.kb-row.indent2 {
+  margin-left: 40px;
+  margin-right: -40px;
+  flex-direction: row;
+}
+.key {
+  background-color: #1c2530;
+  color: #e8eef3;
+  font-size: 23px;
+  border-radius: 12px;
+  padding: 14px 0;
+  width: 74px;
+  margin: 0 5px;
+  text-align: center;
+}
+.key.num {
+  background-color: #232f3c;
+  color: #7fd7b6;
+}
+.key.wide {
+  background-color: #233043;
+  color: #9ec5ff;
+}
+.key.caps {
+  background-color: #2a3644;
+  color: #fbbf24;
+}
+.key.del {
+  background-color: rgba(248, 113, 113, 0.16);
+  color: #f87171;
 }
 .error {
   background-color: rgba(248, 113, 113, 0.12);
@@ -321,7 +472,8 @@ export default {
   font-size: 23px;
   border-radius: 18px;
   padding: 20px 24px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
+  width: 100%;
 }
 .row-badges {
   flex-direction: row;
@@ -365,7 +517,7 @@ export default {
 }
 .arrow-txt {
   color: #fbbf24;
-  font-size: 30px;
+  font-size: 24px;
   padding: 0 18px;
 }
 .note {
