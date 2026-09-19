@@ -3,6 +3,10 @@ import { parseFormula, molarMass, splitInputTokens, resolveToken } from '../src/
 import { balance } from '../src/common/logic/balance.js'
 import { solveReaction } from '../src/common/logic/reactions.js'
 import { computeMasses } from '../src/common/logic/stoich.js'
+import { balanceEquation } from '../src/common/logic/equation.js'
+import { formulaMolarInfo } from '../src/common/logic/molar.js'
+import { gasFromVolume, gasFromMass } from '../src/common/logic/gas.js'
+import { fmtSci } from '../src/common/logic/fmt.js'
 import { NAME_MAP } from '../src/common/logic/substances.js'
 import assert from 'node:assert'
 
@@ -667,6 +671,77 @@ T('铝热 Al+Fe3O4 系数 8/3/4/9', () => {
   const r = solveReaction(['Al','Fe3O4'])
   assert.equal(r.ok, true)
   assert.deepEqual(r.reaction.coefs, [8, 3, 4, 9])
+})
+
+// ---- V26.9.58 新增：自定义配平 / 相对分子质量 / 气体标况 ----
+T('配平 Fe+O2=Fe3O4', () => {
+  const r = balanceEquation('Fe+O2=Fe3O4')
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.rows.map(x => x.coef), [3, 2, 1])
+})
+T('配平 kmno4+hcl 全小写（大小写互换 + 配平）', () => {
+  const r = balanceEquation('kmno4+hcl=kcl+mncl2+cl2+h2o')
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.rows.map(x => x.coef), [2, 16, 2, 2, 5, 8])
+})
+T('配平 中文名 碳酸钙=氧化钙+二氧化碳', () => {
+  const r = balanceEquation('碳酸钙=氧化钙+二氧化碳')
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.rows.map(x => x.coef), [1, 1, 1])
+})
+T('配平 乙醇燃烧（用 → 与全角＋）', () => {
+  const r = balanceEquation('C2H5OH＋O2→CO2+H2O')
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.rows.map(x => x.coef), [1, 3, 2, 3])
+})
+T('配平 缺等号时给出提示', () => {
+  const r = balanceEquation('Fe+O2')
+  assert.equal(r.ok, false)
+  assert.ok(r.error.indexOf('=') >= 0)
+})
+T('配平 无法配平时不硬配（Na+O2=NaCl）', () => {
+  const r = balanceEquation('Na+O2=NaCl')
+  assert.equal(r.ok, false)
+})
+T('M(H2O) 与元素质量分数', () => {
+  const r = formulaMolarInfo('H2O')
+  assert.equal(r.ok, true)
+  assert.equal(Math.round(r.M), 18)
+  const o = r.rows.filter(x => x.sym === 'O')[0]
+  assert.ok(Math.abs(o.pct - 88.81) < 0.05)
+  assert.equal(r.ratioText, 'H : O = 2 : 16')
+})
+T('M(CuSO4·5H2O) 结晶水解析', () => {
+  const r = formulaMolarInfo('cuso4·5h2o')
+  assert.equal(r.ok, true)
+  assert.equal(r.formula, 'CuSO4·5H2O')
+  assert.ok(Math.abs(r.M - 249.68) < 0.05)
+  assert.equal(r.atoms, 21)
+})
+T('未知物质名给出错误', () => {
+  const r = formulaMolarInfo('不存在的物质')
+  assert.equal(r.ok, false)
+})
+T('气体：11.2 L O2 → 0.5 mol / 16 g', () => {
+  const r = gasFromVolume('O2', 11.2)
+  assert.equal(r.ok, true)
+  assert.equal(r.n, 0.5)
+  assert.ok(Math.abs(r.mass - 16) < 0.01)
+  assert.ok(Math.abs(r.molecules - 3.011e23) < 1e20)
+})
+T('气体：4.4 g CO2 → 0.09998 mol / 2.2395 L', () => {
+  const r = gasFromMass('co2', 4.4)
+  assert.equal(r.ok, true)
+  assert.ok(Math.abs(r.n - 0.09998) < 0.0001)
+  assert.ok(Math.abs(r.volume - 2.2395) < 0.001)
+})
+T('气体：非法体积被拒绝', () => {
+  assert.equal(gasFromVolume('O2', 0).ok, false)
+  assert.equal(gasFromMass('O2', -3).ok, false)
+})
+T('fmtSci 科学计数法纯文本', () => {
+  assert.equal(fmtSci(3.011e23), '3.011×10^23')
+  assert.equal(fmtSci(0.5), '0.5')
 })
 
 console.log('\n==== RESULT:', pass, 'passed,', fail, 'failed ====')

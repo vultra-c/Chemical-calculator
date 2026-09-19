@@ -8,7 +8,7 @@
 <template>
   <div class="page" @swipe="onSwipe">
 
-    <!-- 功能卡片列表（5 项，可滚动） -->
+    <!-- 功能卡片列表（9 项，可滚动） -->
     <list class="list" id="menuList">
       <list-item for="{{menu}}" tid="id" class="item" type="menu" @click="go($item)">
         <div class="item-content">
@@ -39,11 +39,14 @@ export default {
   private: {
     menu: [
       { id: 'm1', uri: 'pages/reaction', title: '反应计算', sub: '输入反应物，自动推导并配平' },
-      { id: 'm2', uri: 'pages/element', title: '元素查询', sub: '按元素或名称查找方程式' },
-      { id: 'm3', uri: 'pages/synth', title: '合成查询', sub: '输入产物，逆推需要的反应物' },
-      { id: 'm4', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
-      { id: 'm5', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' },
-      { id: 'm6', uri: 'pages/reference', title: '化学速查', sub: '周期表 · 离子 · 沉淀 · 颜色 · 气体' }
+      { id: 'm2', uri: 'pages/balance', title: '方程式配平', sub: '输入未配平方程式，自动配系数' },
+      { id: 'm3', uri: 'pages/molar', title: '相对分子质量', sub: 'M、元素质量分数与质量比' },
+      { id: 'm4', uri: 'pages/gas', title: '气体标况换算', sub: '体积 ↔ 质量 ↔ 分子个数' },
+      { id: 'm5', uri: 'pages/element', title: '元素查询', sub: '按元素或名称查找方程式' },
+      { id: 'm6', uri: 'pages/synth', title: '合成查询', sub: '输入产物，逆推需要的反应物' },
+      { id: 'm7', uri: 'pages/mass', title: '质量计算', sub: '已知一种质量，推算全部物质' },
+      { id: 'm8', uri: 'pages/catalog', title: '常用物质表', sub: '浏览常见物质，点选填入' },
+      { id: 'm9', uri: 'pages/reference', title: '化学速查', sub: '周期表 · 离子 · 沉淀 · 颜色 · 气体' }
     ]
   },
 

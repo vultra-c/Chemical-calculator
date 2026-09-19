@@ -13,6 +13,22 @@ export function subDigit(num) {
 }
 
 /**
+ * 科学计数法纯文本：手表字体缺上标字形，指数一律写成 10^23。
+ * fmtSci(3.011e23) → '3.011×10^23'；小数值回退普通写法（如 0.5）。
+ */
+export function fmtSci(v) {
+  const n = Number(v)
+  if (!isFinite(n) || n === 0) return '0'
+  const abs = Math.abs(n)
+  if (abs >= 1e5 || abs < 1e-3) {
+    const exp = Math.floor(Math.log10(abs))
+    const mant = n / Math.pow(10, exp)
+    return (Math.round(mant * 1000) / 1000) + '×10^' + exp
+  }
+  return String(Math.round(n * 1000) / 1000)
+}
+
+/**
  * 离子电荷纯文本（ASCII，数字在前、符号在后，初中规范写法，读作"几加/几减"）。
  * 部分手表字体不含 Unicode 上标字形，用本函数给出可读备份：
  * chargeText('+3') → '3+'（三加），chargeText('-2') → '2-'（二减），'+1' → '+'，'-1' → '-'

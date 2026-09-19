@@ -1,0 +1,361 @@
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
+
+<!--
+  化学工具箱 · 相对分子质量与元素质量分数页（336×480，闪念小抄风格）
+  流程：输入化学式（或中文名）→ 算出相对分子质量 M、原子总数、
+        每种元素的原子个数/相对原子质量/质量分数、元素质量比。
+  输入卡与按钮全部位于键盘遮挡区之上（<=252px）。
+-->
+<template>
+  <div class="page" @swipe="onSwipe">
+
+    <text class="sec-label">输入化学式（支持结晶水 · 与中文名）</text>
+
+    <div class="mol-input" @click="toggleKb">
+      <text if="{{inputStr.length == 0}}" class="mol-ph">如 CuSO4·5H2O、Fe2O3</text>
+      <div if="{{inputStr.length > 0}}" class="mol-value-row">
+        <text class="mol-value">{{inputStr}}</text>
+        <text if="{{showKb}}" class="mol-caret">_</text>
+      </div>
+    </div>
+
+    <div class="clr-btn" @click="clearAll">
+      <text class="clr-t">清空</text>
+    </div>
+    <div class="btn-main go-btn" @click="onCalc">
+      <text class="btn-main-t">计算</text>
+    </div>
+
+    <scroll class="ex-scroll" scroll-x="{{true}}" if="{{!hasResult}}">
+      <div class="ex-row">
+        <div class="ex-chip" for="{{examples}}" tid="ex" @click="useExample($item)">
+          <text class="ex-t">{{$item.label}}</text>
+        </div>
+      </div>
+    </scroll>
+
+    <text class="hint-tip" if="{{!hasResult}}">质量分数按 IUPAC 精确相对原子质量计算</text>
+
+    <list class="res-list" if="{{hasResult}}">
+      <list-item for="{{rows}}" tid="rid" type="res" class="{{$item.kind === 'head' ? 'res-head' : 'res-row'}}">
+        <div class="res-content">
+          <text class="{{$item.kind === 'head' ? 'head-main' : 'res-main'}}">{{$item.main}}</text>
+          <text class="{{$item.kind === 'head' ? 'head-sub' : 'res-sub'}}">{{$item.sub}}</text>
+        </div>
+      </list-item>
+    </list>
+
+    <!-- 顶栏（闪念小抄同款） -->
+    <img static src="/common/images/hd.png" class="hd-bg" />
+    <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
+    <text static class="hd-sub">M 与质量分数</text>
+    <text static class="hd-title">相对分子质量</text>
+
+    <input-method hide="{{!showKb}}" keyboardtype="QWERTY" screentype="rect" maxlength="8"
+      vibratemode="{{vibrateMode}}" @complete="onInput" @delete="onDel"></input-method>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import prompt from '@system.prompt'
+import { formulaMolarInfo } from '../../common/logic/molar.js'
+import { loadSettings, fmtOut } from '../../common/logic/settings.js'
+import { formulaToText } from '../../common/logic/fmt.js'
+
+export default {
+  private: {
+    inputStr: '',
+    showKb: false,
+    hasResult: false,
+    rows: [],
+    vibrateMode: 'short',
+    examples: [
+      { id: 'm1', label: 'H2O', text: 'H2O' },
+      { id: 'm2', label: 'Fe2O3', text: 'Fe2O3' },
+      { id: 'm3', label: 'CuSO4·5H2O', text: 'CuSO4·5H2O' },
+      { id: 'm4', label: 'Ca(OH)2', text: 'Ca(OH)2' },
+      { id: 'm5', label: 'KMnO4', text: 'KMnO4' }
+    ]
+  },
+
+  onInit() {
+    loadSettings((s) => {
+      this.vibrateMode = s.vibrate === false ? '' : 'short'
+    })
+  },
+
+  toggleKb() {
+    this.showKb = !this.showKb
+  },
+
+  onInput(e) {
+    if (!e || !e.detail) return
+    const ch = String(e.detail.content || '')
+    if (!ch || this.inputStr.length >= 40) return
+
+    // 中文名称（如 胆矾、氧化铁）
+    if (/[\u4e00-\u9fa5]/.test(ch)) {
+      this.inputStr += ch
+      return
+    }
+    if (ch === ' ' || ch === '+' || ch === '＝' || ch === '=') return
+    // 字母：段首自动大写
+    if (/^[A-Za-z]+$/.test(ch)) {
+      for (let ci = 0; ci < ch.length; ci++) {
+        const c1 = ch[ci]
+        const seg = this.inputStr.split(/[()[\u4e00-\u9fa5]]/).pop() || ''
+        const needUpper = seg === '' || /[0-9]$/.test(seg)
+        this.inputStr += (needUpper && c1 === c1.toLowerCase()) ? c1.toUpperCase() : c1
+      }
+      return
+    }
+    if (/^[0-9()[\]·.]$/.test(ch)) this.inputStr += ch
+  },
+
+  onDel() {
+    if (this.inputStr.length > 0) this.inputStr = this.inputStr.slice(0, -1)
+  },
+
+  clearAll() {
+    this.inputStr = ''
+    this.showKb = false
+    this.hasResult = false
+    this.rows = []
+    prompt.showToast({ message: '已清空', duration: 700 })
+  },
+
+  useExample(item) {
+    if (!item) return
+    this.inputStr = item.text
+    this.showKb = false
+    this.onCalc()
+  },
+
+  onCalc() {
+    this.showKb = false
+    const raw = this.inputStr.trim()
+    if (!raw) {
+      prompt.showToast({ message: '请先输入化学式', duration: 1500 })
+      return
+    }
+
+    let info = null
+    try {
+      info = formulaMolarInfo(raw)
+    } catch (err) {
+      info = null
+    }
+    if (!info || !info.ok) {
+      this.hasResult = false
+      this.rows = []
+      prompt.showToast({ message: (info && info.error) ? info.error : '无法识别该化学式', duration: 2200 })
+      return
+    }
+
+    const rows = []
+    rows.push({
+      kind: 'head',
+      rid: 'hd',
+      main: 'M(' + formulaToText(info.formula, 1) + ') = ' + fmtOut(info.M),
+      sub: (info.byName ? '中文名已换算 · ' : '') + '共 ' + info.atoms + ' 个原子'
+    })
+    for (let i = 0; i < info.rows.length; i++) {
+      const r = info.rows[i]
+      rows.push({
+        kind: 'el',
+        rid: 'e' + i,
+        main: r.sym + ' × ' + r.count,
+        sub: 'Ar ' + fmtOut(r.ar) + ' · 质量 ' + fmtOut(r.mass) + ' · 质量分数 ' + fmtOut(r.pct) + '%'
+      })
+    }
+    if (info.ratioText) {
+      rows.push({
+        kind: 'el',
+        rid: 'ratio',
+        main: '元素质量比',
+        sub: info.ratioText + '（取整相对原子质量）'
+      })
+    }
+    this.rows = rows
+    this.hasResult = true
+  },
+
+  goBack() { router.back() },
+
+  onSwipe(e) {
+    if (e && e.direction === 'right') {
+      if (this.showKb) this.showKb = false
+      else router.back()
+    }
+  },
+  onBackPress() {
+    router.back()
+    return true
+  }
+}
+</script>
+
+<style>
+@import '../../common/style.css';
+
+.sec-label {
+  position: absolute;
+  left: 16px;
+  top: 106px;
+  width: 304px;
+  font-size: 20px;
+  line-height: 24px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.mol-input {
+  position: absolute;
+  left: 6px;
+  top: 132px;
+  width: 324px;
+  height: 62px;
+  border-radius: 31px;
+  background-color: #262626;
+  padding: 0 20px;
+  justify-content: center;
+}
+.mol-ph {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.32);
+}
+.mol-value-row {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+}
+.mol-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.mol-caret {
+  font-size: 24px;
+  color: #0d6eff;
+  margin-left: 2px;
+}
+
+.clr-btn {
+  position: absolute;
+  left: 6px;
+  top: 202px;
+  width: 86px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: #262626;
+  justify-content: center;
+  align-items: center;
+}
+.clr-t {
+  font-size: 24px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.75);
+}
+.go-btn {
+  position: absolute;
+  left: 100px;
+  top: 202px;
+  width: 230px;
+  height: 48px;
+  border-radius: 24px;
+}
+.go-btn .btn-main-t {
+  font-size: 24px;
+}
+
+.ex-scroll {
+  position: absolute;
+  left: 6px;
+  top: 262px;
+  width: 324px;
+  height: 44px;
+}
+.ex-row {
+  flex-direction: row;
+}
+.ex-chip {
+  height: 42px;
+  border-radius: 21px;
+  background-color: #262626;
+  padding: 0 18px;
+  margin-right: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+.ex-t {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.hint-tip {
+  position: absolute;
+  left: 16px;
+  top: 320px;
+  width: 304px;
+  font-size: 19px;
+  line-height: 26px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+.res-list {
+  position: absolute;
+  left: 6px;
+  top: 258px;
+  width: 324px;
+  height: 214px;
+}
+.res-head {
+  width: 100%;
+  height: 76px;
+  border-radius: 26px;
+  background-color: #262626;
+  padding: 10px 18px;
+  margin-bottom: 8px;
+}
+.res-row {
+  width: 100%;
+  height: 58px;
+  border-radius: 22px;
+  background-color: #1c1c1e;
+  padding: 8px 18px;
+  margin-bottom: 6px;
+}
+.res-content {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+.head-main {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.head-sub {
+  font-size: 17px;
+  color: #4da3ff;
+  margin-top: 2px;
+}
+.res-main {
+  font-size: 22px;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.res-sub {
+  font-size: 16px;
+  line-height: 20px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+</style>

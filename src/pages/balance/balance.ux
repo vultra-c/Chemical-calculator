@@ -1,0 +1,385 @@
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
+
+<!--
+  化学工具箱 · 方程式配平页（336×480，闪念小抄风格）
+  流程：输入未配平的方程式（如 Fe+O2=Fe3O4 / kmno4+hcl=kcl+mncl2+cl2+h2o）
+        → 内置整数配平算法求最简系数 → 输出完整方程式 + 每种物质的系数与相对分子质量。
+  输入支持化学式与中文名；键盘空格键当 + 用，数字/符号面板里 .= 直接输入。
+  输入卡与按钮全部位于键盘遮挡区之上（<=252px）。
+-->
+<template>
+  <div class="page" @swipe="onSwipe">
+
+    <text class="sec-label">输入未配平方程式（用 = 分左右）</text>
+
+    <!-- 输入卡：点击弹出/收起键盘 -->
+    <div class="eq-input" @click="toggleKb">
+      <text if="{{inputStr.length == 0}}" class="eq-ph">如 Fe+O2=Fe3O4</text>
+      <div if="{{inputStr.length > 0}}" class="eq-value-row">
+        <text class="eq-value">{{inputStr}}</text>
+        <text if="{{showKb}}" class="eq-caret">_</text>
+      </div>
+    </div>
+
+    <!-- 操作行（均在键盘遮挡区之上） -->
+    <div class="clr-btn" @click="clearAll">
+      <text class="clr-t">清空</text>
+    </div>
+    <div class="btn-main go-btn" @click="onBalance">
+      <text class="btn-main-t">配平</text>
+    </div>
+
+    <!-- 示例：未出结果时点选填入（键盘收回后可用） -->
+    <scroll class="ex-scroll" scroll-x="{{true}}" if="{{!hasResult}}">
+      <div class="ex-row">
+        <div class="ex-chip" for="{{examples}}" tid="ex" @click="useExample($item)">
+          <text class="ex-t">{{$item.label}}</text>
+        </div>
+      </div>
+    </scroll>
+
+    <text class="hint-tip" if="{{!hasResult}}">空格键 = 加号，= 在数字/符号面板</text>
+
+    <!-- 结果：第一行是配平后的完整方程式，其后每种物质一行 -->
+    <list class="res-list" if="{{hasResult}}">
+      <list-item for="{{rows}}" tid="rid" type="res" class="{{$item.kind === 'eq' ? 'res-eq' : 'res-row'}}">
+        <div class="res-content">
+          <text class="{{$item.kind === 'eq' ? 'eq-text' : 'res-main'}}">{{$item.main}}</text>
+          <text class="{{$item.kind === 'eq' ? 'eq-sub' : 'res-sub'}}">{{$item.sub}}</text>
+        </div>
+      </list-item>
+    </list>
+
+    <!-- 顶栏（闪念小抄同款） -->
+    <img static src="/common/images/hd.png" class="hd-bg" />
+    <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
+    <text static class="hd-sub">自动配平系数</text>
+    <text static class="hd-title">方程式配平</text>
+
+    <input-method hide="{{!showKb}}" keyboardtype="QWERTY" screentype="rect" maxlength="8"
+      vibratemode="{{vibrateMode}}" @complete="onInput" @delete="onDel"></input-method>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import prompt from '@system.prompt'
+import { balanceEquation } from '../../common/logic/equation.js'
+import { loadSettings, fmtOut } from '../../common/logic/settings.js'
+import { formulaToText } from '../../common/logic/fmt.js'
+
+export default {
+  private: {
+    inputStr: '',
+    showKb: false,
+    hasResult: false,
+    eqText: '',
+    rows: [],
+    vibrateMode: 'short',
+    examples: [
+      { id: 'e1', label: 'Fe+O2=Fe3O4', text: 'Fe+O2=Fe3O4' },
+      { id: 'e2', label: 'CaCO3=CaO+CO2', text: 'CaCO3=CaO+CO2' },
+      { id: 'e3', label: 'Al+H2SO4=Al2(SO4)3+H2', text: 'Al+H2SO4=Al2(SO4)3+H2' },
+      { id: 'e4', label: 'KMnO4+HCl', text: 'KMnO4+HCl=KCl+MnCl2+Cl2+H2O' },
+      { id: 'e5', label: '乙醇燃烧', text: 'C2H5OH+O2=CO2+H2O' }
+    ]
+  },
+
+  onInit() {
+    loadSettings((s) => {
+      this.vibrateMode = s.vibrate === false ? '' : 'short'
+    })
+  },
+
+  toggleKb() {
+    this.showKb = !this.showKb
+  },
+
+  onInput(e) {
+    if (!e || !e.detail) return
+    const ch = String(e.detail.content || '')
+    if (!ch || this.inputStr.length >= 60) return
+
+    // 中文名称：直接追加（如 碳酸钙）
+    if (/[\u4e00-\u9fa5]/.test(ch)) {
+      this.inputStr += ch
+      return
+    }
+    // 空格 / 加号 → 分隔符 +（键盘空格键即加号）
+    if (ch === ' ' || ch === '+' || ch === '＋') {
+      this.appendSep('+')
+      return
+    }
+    // 等号 → 左右分隔
+    if (ch === '=' || ch === '＝' || ch === '→') {
+      this.appendSep('=')
+      return
+    }
+    // 字母：段首自动大写（Fe、O2、CaCO3 书写习惯），整词候选逐字符处理
+    if (/^[A-Za-z]+$/.test(ch)) {
+      for (let ci = 0; ci < ch.length; ci++) {
+        const c1 = ch[ci]
+        const seg = this.inputStr.split(/[+()[\]\u4e00-\u9fa5=]/).pop() || ''
+        const needUpper = seg === '' || /[0-9]$/.test(seg)
+        this.inputStr += (needUpper && c1 === c1.toLowerCase()) ? c1.toUpperCase() : c1
+      }
+      return
+    }
+    // 数字、括号、小数点、结晶水点
+    if (/^[0-9()[\]·.]$/.test(ch)) {
+      this.inputStr += ch
+    }
+  },
+
+  appendSep(sep) {
+    if (!this.inputStr) return
+    const last = this.inputStr.slice(-1)
+    if (last === '+' || last === '=') {
+      this.inputStr = this.inputStr.slice(0, -1) + sep
+    } else {
+      this.inputStr += sep
+    }
+  },
+
+  onDel() {
+    if (this.inputStr.length > 0) this.inputStr = this.inputStr.slice(0, -1)
+  },
+
+  clearAll() {
+    this.inputStr = ''
+    this.showKb = false
+    this.hasResult = false
+    this.rows = []
+    prompt.showToast({ message: '已清空', duration: 700 })
+  },
+
+  useExample(item) {
+    if (!item) return
+    this.inputStr = item.text
+    this.showKb = false
+    this.onBalance()
+  },
+
+  onBalance() {
+    this.showKb = false
+    const raw = this.inputStr.trim()
+    if (!raw) {
+      prompt.showToast({ message: '请先输入方程式', duration: 1500 })
+      return
+    }
+
+    let out = null
+    try {
+      out = balanceEquation(raw)
+    } catch (err) {
+      out = null
+    }
+    if (!out || !out.ok) {
+      this.hasResult = false
+      this.rows = []
+      prompt.showToast({ message: (out && out.error) ? out.error : '配平失败，请检查输入', duration: 2400 })
+      return
+    }
+
+    const rows = []
+    rows.push({
+      kind: 'eq',
+      rid: 'eq',
+      main: out.text,
+      sub: '已配平 · 共 ' + out.rows.length + ' 种物质'
+    })
+    for (let i = 0; i < out.rows.length; i++) {
+      const r = out.rows[i]
+      rows.push({
+        kind: 'el',
+        rid: 's' + i,
+        main: (r.coef > 1 ? r.coef + ' × ' : '') + formulaToText(r.formula, 1),
+        sub: 'M = ' + fmtOut(r.M) + ' · ' + (r.side === 'left' ? '反应物' : '生成物')
+      })
+    }
+    this.eqText = out.text
+    this.rows = rows
+    this.hasResult = true
+  },
+
+  goBack() { router.back() },
+
+  onSwipe(e) {
+    if (e && e.direction === 'right') {
+      if (this.showKb) this.showKb = false
+      else router.back()
+    }
+  },
+  onBackPress() {
+    router.back()
+    return true
+  }
+}
+</script>
+
+<style>
+@import '../../common/style.css';
+
+.sec-label {
+  position: absolute;
+  left: 16px;
+  top: 106px;
+  width: 304px;
+  font-size: 20px;
+  line-height: 24px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ---- 输入卡（键盘遮挡区之上：bottom 194） ---- */
+.eq-input {
+  position: absolute;
+  left: 6px;
+  top: 132px;
+  width: 324px;
+  height: 62px;
+  border-radius: 31px;
+  background-color: #262626;
+  padding: 0 20px;
+  justify-content: center;
+}
+.eq-ph {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.32);
+}
+.eq-value-row {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+}
+.eq-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.eq-caret {
+  font-size: 24px;
+  color: #0d6eff;
+  margin-left: 2px;
+}
+
+/* ---- 操作行（bottom 250 <= 252） ---- */
+.clr-btn {
+  position: absolute;
+  left: 6px;
+  top: 202px;
+  width: 86px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: #262626;
+  justify-content: center;
+  align-items: center;
+}
+.clr-t {
+  font-size: 24px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.75);
+}
+.go-btn {
+  position: absolute;
+  left: 100px;
+  top: 202px;
+  width: 230px;
+  height: 48px;
+  border-radius: 24px;
+}
+.go-btn .btn-main-t {
+  font-size: 24px;
+}
+
+/* ---- 示例（未出结果时显示） ---- */
+.ex-scroll {
+  position: absolute;
+  left: 6px;
+  top: 262px;
+  width: 324px;
+  height: 44px;
+}
+.ex-row {
+  flex-direction: row;
+}
+.ex-chip {
+  height: 42px;
+  border-radius: 21px;
+  background-color: #262626;
+  padding: 0 18px;
+  margin-right: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+.ex-t {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.hint-tip {
+  position: absolute;
+  left: 16px;
+  top: 320px;
+  width: 304px;
+  font-size: 19px;
+  line-height: 26px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+/* ---- 结果列表 ---- */
+.res-list {
+  position: absolute;
+  left: 6px;
+  top: 258px;
+  width: 324px;
+  height: 214px;
+}
+.res-eq {
+  width: 100%;
+  height: 92px;
+  border-radius: 26px;
+  background-color: #262626;
+  padding: 12px 18px;
+  margin-bottom: 8px;
+}
+.res-row {
+  width: 100%;
+  height: 62px;
+  border-radius: 22px;
+  background-color: #1c1c1e;
+  padding: 8px 18px;
+  margin-bottom: 6px;
+}
+.res-content {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+.eq-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  line-height: 30px;
+}
+.eq-sub {
+  font-size: 17px;
+  color: #4da3ff;
+  margin-top: 2px;
+}
+.res-main {
+  font-size: 22px;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.res-sub {
+  font-size: 16px;
+  line-height: 20px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+</style>

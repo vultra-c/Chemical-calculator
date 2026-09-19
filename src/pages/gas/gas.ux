@@ -1,0 +1,353 @@
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
+
+<!--
+  化学工具箱 · 气体标况换算页（336×480，闪念小抄风格）
+  标准状况（0 ℃、101 kPa）V_m = 22.4 L/mol：
+    体积 → 物质的量 → 质量 → 分子个数
+    质量 → 物质的量 → 标准状况体积 → 分子个数
+  两个输入框（化学式 / 数值）+ 模式切换，均在键盘遮挡区之上（<=252px）。
+-->
+<template>
+  <div class="page" @swipe="onSwipe">
+
+    <!-- 模式与计算（同行 scroll-x，键盘弹出时也可点） -->
+    <scroll class="mode-scroll" scroll-x="{{true}}">
+      <div class="mode-row">
+        <div class="{{dir === 'v' ? 'mode-chip-on' : 'mode-chip'}}" @click="setDir('v')">
+          <text class="{{dir === 'v' ? 'mode-t-on' : 'mode-t'}}">体积 → 质量</text>
+        </div>
+        <div class="{{dir === 'm' ? 'mode-chip-on' : 'mode-chip'}}" @click="setDir('m')">
+          <text class="{{dir === 'm' ? 'mode-t-on' : 'mode-t'}}">质量 → 体积</text>
+        </div>
+        <div class="go-chip" @click="onCalc">
+          <text class="go-t">计算</text>
+        </div>
+      </div>
+    </scroll>
+
+    <!-- 输入框 1：化学式（bottom 202） -->
+    <div class="{{activeIdx === 0 ? 'fld-on' : 'fld'}}" style="top:156px;" @click="pick(0)">
+      <text class="fld-l">化学式</text>
+      <text class="fld-v">{{formula === '' ? '点此输入' : formula}}</text>
+    </div>
+
+    <!-- 输入框 2：数值（bottom 252） -->
+    <div class="{{activeIdx === 1 ? 'fld-on' : 'fld'}}" style="top:206px;" @click="pick(1)">
+      <text class="fld-l">{{numLabel}}</text>
+      <text class="fld-v">{{numStr === '' ? '点此输入' : numStr}}</text>
+    </div>
+
+    <text class="hint-tip" if="{{!hasResult}}">V_m = 22.4 L/mol（标准状况 0 ℃、101 kPa）</text>
+
+    <list class="res-list" if="{{hasResult}}">
+      <list-item for="{{rows}}" tid="rid" type="res" class="{{$item.kind === 'head' ? 'res-head' : 'res-row'}}">
+        <div class="res-content">
+          <text class="{{$item.kind === 'head' ? 'head-main' : 'res-main'}}">{{$item.main}}</text>
+          <text class="{{$item.kind === 'head' ? 'head-sub' : 'res-sub'}}">{{$item.sub}}</text>
+        </div>
+      </list-item>
+    </list>
+
+    <!-- 顶栏（闪念小抄同款） -->
+    <img static src="/common/images/hd.png" class="hd-bg" />
+    <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
+    <text static class="hd-sub">V_m = 22.4 L/mol</text>
+    <text static class="hd-title">气体标况换算</text>
+
+    <input-method hide="{{!showKb}}" keyboardtype="QWERTY" screentype="rect" maxlength="8"
+      vibratemode="{{vibrateMode}}" @complete="onInput" @delete="onDel"></input-method>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import prompt from '@system.prompt'
+import { gasFromVolume, gasFromMass, V_M } from '../../common/logic/gas.js'
+import { loadSettings, fmtOut } from '../../common/logic/settings.js'
+import { fmtSci, formulaToText } from '../../common/logic/fmt.js'
+
+export default {
+  private: {
+    dir: 'v',            // 'v' 体积→质量；'m' 质量→体积
+    activeIdx: 0,
+    formula: '',
+    numStr: '',
+    showKb: false,
+    hasResult: false,
+    rows: [],
+    vibrateMode: 'short',
+    numLabel: '标准状况体积 L'
+  },
+
+  onInit() {
+    loadSettings((s) => {
+      this.vibrateMode = s.vibrate === false ? '' : 'short'
+    })
+  },
+
+  setDir(d) {
+    if (this.dir === d) return
+    this.dir = d
+    this.numLabel = d === 'v' ? '标准状况体积 L' : '质量 g'
+    this.hasResult = false
+    this.rows = []
+  },
+
+  pick(idx) {
+    this.activeIdx = idx
+    this.showKb = true
+  },
+
+  onInput(e) {
+    if (!e || !e.detail) return
+    const ch = String(e.detail.content || '')
+    if (!ch) return
+
+    if (this.activeIdx === 0) {
+      if (this.formula.length >= 40) return
+      if (/[\u4e00-\u9fa5]/.test(ch)) { this.formula += ch; return }
+      if (/^[A-Za-z]+$/.test(ch)) {
+        for (let ci = 0; ci < ch.length; ci++) {
+          const c1 = ch[ci]
+          const seg = this.formula.split(/[()[\u4e00-\u9fa5]]/).pop() || ''
+          const needUpper = seg === '' || /[0-9]$/.test(seg)
+          this.formula += (needUpper && c1 === c1.toLowerCase()) ? c1.toUpperCase() : c1
+        }
+        return
+      }
+      if (/^[0-9()[\]·.]$/.test(ch)) this.formula += ch
+      return
+    }
+
+    // 数值框：只收数字与小数点
+    if (/^[0-9]$/.test(ch)) {
+      if (this.numStr.replace('.', '').length < 9) {
+        if (this.numStr === '0') this.numStr = ''
+        this.numStr += ch
+      }
+    } else if (ch === '.') {
+      if (this.numStr.indexOf('.') === -1) this.numStr = this.numStr ? this.numStr + '.' : '0.'
+    }
+  },
+
+  onDel() {
+    if (this.activeIdx === 0) {
+      if (this.formula.length > 0) this.formula = this.formula.slice(0, -1)
+    } else if (this.numStr.length > 0) {
+      this.numStr = this.numStr.slice(0, -1)
+    }
+  },
+
+  onCalc() {
+    this.showKb = false
+    const f = this.formula.trim()
+    const num = parseFloat(this.numStr)
+    if (!f) { prompt.showToast({ message: '请先输入化学式', duration: 1500 }); return }
+    if (isNaN(num) || num <= 0) { prompt.showToast({ message: '请输入大于 0 的数值', duration: 1500 }); return }
+
+    let out = null
+    try {
+      out = this.dir === 'v' ? gasFromVolume(f, num) : gasFromMass(f, num)
+    } catch (err) {
+      out = null
+    }
+    if (!out || !out.ok) {
+      this.hasResult = false
+      this.rows = []
+      prompt.showToast({ message: (out && out.error) ? out.error : '计算失败', duration: 2200 })
+      return
+    }
+
+    const name = formulaToText(out.formula, 1)
+    const rows = []
+    rows.push({
+      kind: 'head',
+      rid: 'hd',
+      main: 'n = ' + fmtOut(out.n) + ' mol',
+      sub: name + ' · M = ' + fmtOut(out.M) + ' g/mol'
+    })
+    rows.push({ kind: 'el', rid: 'r1', main: 'm = ' + fmtOut(out.mass) + ' g', sub: '质量' })
+    rows.push({ kind: 'el', rid: 'r2', main: 'V = ' + fmtOut(out.volume) + ' L', sub: '标准状况体积（V_m = ' + V_M + ' L/mol）' })
+    rows.push({ kind: 'el', rid: 'r3', main: 'N = ' + fmtSci(out.molecules) + ' 个', sub: '分子个数（N_A = 6.022×10^23）' })
+    this.rows = rows
+    this.hasResult = true
+  },
+
+  goBack() { router.back() },
+
+  onSwipe(e) {
+    if (e && e.direction === 'right') {
+      if (this.showKb) this.showKb = false
+      else router.back()
+    }
+  },
+  onBackPress() {
+    router.back()
+    return true
+  }
+}
+</script>
+
+<style>
+@import '../../common/style.css';
+
+/* ---- 模式行 + 计算（键盘弹出时也可点：bottom 150） ---- */
+.mode-scroll {
+  position: absolute;
+  left: 6px;
+  top: 106px;
+  width: 324px;
+  height: 44px;
+}
+.mode-row {
+  flex-direction: row;
+}
+.mode-chip {
+  height: 42px;
+  border-radius: 21px;
+  background-color: #262626;
+  padding: 0 18px;
+  margin-right: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+.mode-chip-on {
+  height: 42px;
+  border-radius: 21px;
+  background-color: #0d6eff;
+  padding: 0 18px;
+  margin-right: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+.mode-t {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.mode-t-on {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+}
+.go-chip {
+  height: 42px;
+  border-radius: 21px;
+  background-color: #0d6eff;
+  padding: 0 26px;
+  margin-right: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+.go-t {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* ---- 两个输入框 ---- */
+.fld {
+  position: absolute;
+  left: 6px;
+  width: 324px;
+  height: 46px;
+  border-radius: 23px;
+  background-color: #262626;
+  padding: 0 20px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.fld-on {
+  position: absolute;
+  left: 6px;
+  width: 324px;
+  height: 46px;
+  border-radius: 23px;
+  background-color: #262626;
+  border: 2px solid #0d6eff;
+  padding: 0 18px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.fld-l {
+  font-size: 19px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.fld-v {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.hint-tip {
+  position: absolute;
+  left: 16px;
+  top: 268px;
+  width: 304px;
+  font-size: 19px;
+  line-height: 26px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+/* ---- 结果 ---- */
+.res-list {
+  position: absolute;
+  left: 6px;
+  top: 258px;
+  width: 324px;
+  height: 214px;
+}
+.res-head {
+  width: 100%;
+  height: 76px;
+  border-radius: 26px;
+  background-color: #262626;
+  padding: 10px 18px;
+  margin-bottom: 8px;
+}
+.res-row {
+  width: 100%;
+  height: 58px;
+  border-radius: 22px;
+  background-color: #1c1c1e;
+  padding: 8px 18px;
+  margin-bottom: 6px;
+}
+.res-content {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+.head-main {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.head-sub {
+  font-size: 17px;
+  color: #4da3ff;
+  margin-top: 2px;
+}
+.res-main {
+  font-size: 22px;
+  color: #ffffff;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.res-sub {
+  font-size: 16px;
+  line-height: 20px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+</style>
