@@ -31,6 +31,16 @@ for (const m of ['CaCO3','H2O','H2O2','KMnO4','KClO3','Cu2(OH)2CO3','NH4HCO3','N
 // 高中经典氧化还原特殊反应
 add(['NO','O2']); add(['SO2','O2']); add(['NH3','O2']); add(['H2O','NO2']); add(['HCl','MnO2'])
 
+// V26.9.56 考试补充（与 reactions.js SPECIFIC 同步）：卤素置换/铁三角/铝两性/
+// 浓硝酸体系/氯水漂白/硅化合物/硫化物/铝热（Fe3O4）/电解食盐水
+add(['Cl2','NaBr']); add(['Cl2','NaI']); add(['Br2','NaI']); add(['Br2','KI'])
+add(['Fe','FeCl3']); add(['Cu','FeCl3'])
+add(['Al2O3','NaOH']); add(['Al(OH)3','NaOH']); add(['Al','NaOH','H2O'])
+add(['Cu','HNO3']); add(['C','HNO3'])
+add(['Cl2','H2O']); add(['Cl2','NaOH']); add(['Cl2','Ca(OH)2'])
+add(['SiO2','NaOH']); add(['SiO2','CaO']); add(['Na2SiO3','HCl'])
+add(['FeS','HCl']); add(['Na2O2','SO2']); add(['Al','Fe3O4']); add(['NaCl','H2O'])
+
 // 金属 + 氧气
 for (const m of METALS) add([m, 'O2'])
 // 非金属 + 氧气

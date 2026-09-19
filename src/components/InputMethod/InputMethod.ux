@@ -147,7 +147,8 @@
 import vibrator from "@system.vibrator";
 import device from '@system.device'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
-import { englishSymbolIndex } from "../../common/logic/elements.js";
+// 英文模式已取消前缀联想（V26.9.56）：字母即时上屏、候选行保持空白，
+// 因此不再需要 englishSymbolIndex（common/logic/elements.js 中定义保留，供他处复用）。
 function doSearchDic(word, lang, cb) {
   if (!word) {
     cb({ chars: [], multi: null });
@@ -507,25 +508,17 @@ export default {
   },
 
   /**
-   * 英文符号联想：输入前缀 → [输入本身, 前缀补全候选…]。
-   * 与中文共享 resultWordList → resultRow0 展示管道；用户点候选时 onRsSelect
-   * 按 pendingEn 长度反向 delete 后把整词一次性写入输入框。
+   * 英文模式：取消联想（V26.9.56）。
+   * 字母按键已即时上屏到输入框，此前基于元素符号前缀的候选行
+   * （c → c/ca/cl/cu…）只会干扰化学式输入，这里直接保持候选行为空；
+   * 中文模式的拼音候选（getResultByWord → dic 词库）完全不受影响。
+   * pendingEn 机制保留：退格/空格路径行为不变，只是候选行不再展示。
    */
-  applyEnglishCandidates(input) {
-    const out = [input];
-    const idx = englishSymbolIndex();
-    const hits = idx && idx[input.toLowerCase()];
-    if (hits) {
-      for (let i = 0; i < hits.length && out.length < 13; i++) {
-        // rest 为空表示整个符号即输入本身（与 out[0] 重复），跳过
-        if (hits[i].rest === '') continue;
-        out.push(input + hits[i].rest);
-      }
-    }
+  applyEnglishCandidates() {
     this.resultList = [];
     this.matchedLen = 0;
     this.sylTopChars = [];
-    this.resultWordList = out;
+    this.resultWordList = [];
     this.setResultListAll();
   },
   setResultListAll() {

@@ -562,5 +562,112 @@ T('新物质名解析（考试俗名补全）', () => {
   assert.equal(resolveToken('氨水', NAME_MAP).formula, 'NH3')
 })
 
+// ---- V26.9.56 大小写互换 ----
+T('大小写 kmno4→KMnO4', () => {
+  const r = parseFormula('kmno4')
+  assert.equal(r.ok, true); assert.equal(r.canon, 'KMnO4')
+})
+T('大小写 KMNO4→KMnO4', () => {
+  const r = parseFormula('KMNO4')
+  assert.equal(r.canon, 'KMnO4')
+})
+T('大小写 NACL→NaCl', () => {
+  const r = parseFormula('NACL')
+  assert.equal(r.canon, 'NaCl')
+})
+T('大小写 CUSO4→CuSO4（防铀误切）', () => {
+  const r = parseFormula('CUSO4')
+  assert.equal(r.canon, 'CuSO4')
+})
+T('大小写 SIO2→SiO2（防碘误切）', () => {
+  const r = parseFormula('SIO2')
+  assert.equal(r.canon, 'SiO2')
+})
+T('大小写 Co/CO 合法输入不被误改', () => {
+  assert.equal(parseFormula('Co').canon, 'Co')
+  assert.equal(parseFormula('CO').canon, 'CO')
+  assert.equal(parseFormula('CO2').canon, 'CO2')
+  assert.equal(parseFormula('WO3').canon, 'WO3')
+})
+T('结晶水合物解析 CuSO4·5H2O', () => {
+  const r = parseFormula('CuSO4·5H2O')
+  assert.equal(r.ok, true)
+  assert.equal(r.counts.Cu, 1); assert.equal(r.counts.S, 1)
+  assert.equal(r.counts.O, 9); assert.equal(r.counts.H, 10)
+  assert.equal(r.canon, 'CuSO4·5H2O')
+})
+T('结晶水小写 cuso4·5h2o 自动纠正', () => {
+  const r = parseFormula('cuso4·5h2o')
+  assert.equal(r.canon, 'CuSO4·5H2O')
+})
+T('明矾 KAl(SO4)2·12H2O', () => {
+  const r = parseFormula('KAl(SO4)2·12H2O')
+  assert.equal(r.ok, true)
+  assert.equal(r.counts.K, 1); assert.equal(r.counts.Al, 1)
+  assert.equal(r.counts.S, 2); assert.equal(r.counts.O, 20)
+})
+
+// ---- V26.9.56 新增考试反应 ----
+T('卤素置换 Cl2+NaBr→Br2', () => {
+  const r = solveReaction(['Cl2','NaBr'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['NaCl','Br2'])
+})
+T('卤素置换 Br2+KI→I2', () => {
+  const r = solveReaction(['Br2','KI'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['KBr','I2'])
+})
+T('铁三角 Fe+FeCl3→FeCl2', () => {
+  const r = solveReaction(['Fe','FeCl3'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['FeCl2'])
+})
+T('铁三角 Cu+FeCl3 刻蚀铜', () => {
+  const r = solveReaction(['Cu','FeCl3'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['CuCl2','FeCl2'])
+})
+T('铝两性 Al2O3+NaOH→NaAlO2', () => {
+  const r = solveReaction(['Al2O3','NaOH'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['NaAlO2','H2O'])
+})
+T('铝+NaOH 溶液 生成 H2 系数 3', () => {
+  const r = solveReaction(['Al','NaOH','H2O'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.coefs, [2, 2, 2, 2, 3]) // 2Al+2NaOH+2H2O==2NaAlO2+3H2
+})
+T('铜+浓硝酸 → NO2', () => {
+  const r = solveReaction(['Cu','HNO3'])
+  assert.equal(r.ok, true)
+  assert.ok(r.reaction.products.indexOf('NO2') !== -1)
+})
+T('氯水成分 Cl2+H2O→HCl+HClO', () => {
+  const r = solveReaction(['Cl2','H2O'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['HCl','HClO'])
+})
+T('漂白粉制取 Cl2+Ca(OH)2', () => {
+  const r = solveReaction(['Cl2','Ca(OH)2'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['CaCl2','Ca(ClO)2','H2O'])
+})
+T('电解饱和食盐水', () => {
+  const r = solveReaction(['NaCl','H2O'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['NaOH','H2','Cl2'])
+})
+T('硅酸钠+盐酸→硅酸', () => {
+  const r = solveReaction(['Na2SiO3','HCl'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.products, ['H2SiO3','NaCl'])
+})
+T('铝热 Al+Fe3O4 系数 8/3/4/9', () => {
+  const r = solveReaction(['Al','Fe3O4'])
+  assert.equal(r.ok, true)
+  assert.deepEqual(r.reaction.coefs, [8, 3, 4, 9])
+})
+
 console.log('\n==== RESULT:', pass, 'passed,', fail, 'failed ====')
 process.exit(fail ? 1 : 0)
