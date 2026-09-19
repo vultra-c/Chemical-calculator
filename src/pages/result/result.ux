@@ -1,13 +1,10 @@
 <!--
-  化学工具箱 · 反应结果页（336×480，闪念小抄风格）
+  化学工具箱 · 反应结果页（336×480，设计系统 V2）
 
-  性能要点：整条方程式（含系数与 Unicode 下标）在 JS 里拼成「一个字符串」，
-  模板里只有一个 text 节点自动折行 —— 相比逐段多节点渲染大幅减少 VDOM 规模。
-  主体全部 absolute 顶层挂载；mr-list 列表行静态 class + 显式行高 + div 包裹。
-
+  性能要点保留：整条方程式（含系数与 Unicode 下标）在 JS 里拼成「一个字符串」，
+  模板里只有一个 text 节点自动折行。
   版面自适应：方程式卡片高度按折行估算分 6 档（l1/l1c/l2/l2c/l3/l3c），
-  短方程式收回卡片空间全部让给下方相对分子质量列表（原来固定 196，
-  列表只剩 74 高度）。
+  短方程式收回卡片空间全部让给下方相对分子质量列表。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
@@ -15,7 +12,7 @@
     <!-- 无数据兜底 -->
     <text if="{{!valid}}" class="none-tip">未找到反应数据</text>
 
-    <!-- 方程式卡片（小抄深色大圆角卡片，高度随折行数分档） -->
+    <!-- 方程式卡片（强调蓝底，高度随折行数分档） -->
     <div if="{{valid}}" class="eq-card {{cardVariant}}">
       <text class="eq-text {{textVariant}}">{{eqText}}</text>
       <text if="{{condText}}" class="eq-cond">{{condText}}</text>
@@ -42,7 +39,7 @@
       <text class="btn-main-t">质量计算</text>
     </div>
 
-    <!-- 顶栏（闪念小抄同款） -->
+    <!-- 顶栏 -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
     <text static class="hd-sub">配平结果</text>
@@ -170,20 +167,20 @@ export default {
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* ---- 方程式卡片（小抄深色大圆角卡片，高度随折行数分档） ---- */
+/* ---- 方程式卡片（强调蓝底，高度随折行数分档） ---- */
 .eq-card {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 108px;
-  width: 324px;
-  border-radius: 36px;
-  background-color: #262626;
+  width: 312px;
+  border-radius: 30px;
+  background-color: rgba(10, 132, 255, 0.16);
   padding: 14px 20px;
   flex-direction: column;
   align-items: center;
 }
 .eq-text {
-  width: 284px;
+  width: 276px;
   font-size: 28px;
   line-height: 40px;
   font-weight: bold;
@@ -201,12 +198,12 @@ export default {
 .eq-badge {
   padding: 4px 18px;
   border-radius: 15px;
-  background-color: rgba(13, 110, 255, 0.22);
+  background-color: rgba(10, 132, 255, 0.3);
   margin-top: 6px;
 }
 .eq-badge-t {
   font-size: 19px;
-  color: #4da3ff;
+  color: #6db8ff;
 }
 
 /* 卡片六档高度：内边距 28 + 行数 * 40 + 条件行 30 + 徽标块约 34 */
@@ -223,11 +220,11 @@ export default {
 
 .sec-label {
   position: absolute;
-  left: 16px;
-  width: 304px;
+  left: 18px;
+  width: 300px;
   font-size: 20px;
   line-height: 24px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
 }
 /* 标签顶 = 卡片底(108+卡高) + 6 */
 .sec-l1  { top: 216px; }
@@ -239,8 +236,8 @@ export default {
 
 .mr-list {
   position: absolute;
-  left: 6px;
-  width: 324px;
+  left: 12px;
+  width: 312px;
 }
 /* 列表：顶部贴标签(标签顶+28)，底边止于 412（按钮 418 上留 6） */
 .mr-list-l1  { top: 244px; height: 168px; }
@@ -253,8 +250,8 @@ export default {
 .mr-row {
   width: 100%;
   height: 62px;
-  border-radius: 24px;
-  background-color: #262626;
+  border-radius: 22px;
+  background-color: #1c1c1e;
   padding: 0 18px;
   margin-bottom: 8px;
 }
@@ -272,30 +269,28 @@ export default {
 }
 .mr-v {
   font-size: 22px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.7);
 }
 
-/* ---- 底部操作（56 高，bottom <= 472） ---- */
+/* ---- 底部操作（52 高，bottom <= 472） ---- */
 .foot-back {
   position: absolute;
-  left: 6px;
-  top: 418px;
-  width: 158px;
-  height: 56px;
-  border-radius: 28px;
+  left: 12px;
+  top: 420px;
+  width: 150px;
+  height: 52px;
 }
 .foot-mass {
   position: absolute;
-  left: 172px;
-  top: 418px;
-  width: 158px;
-  height: 56px;
-  border-radius: 28px;
+  left: 174px;
+  top: 420px;
+  width: 150px;
+  height: 52px;
 }
 .foot-back .btn-ghost-t {
-  font-size: 24px;
+  font-size: 22px;
 }
 .foot-mass .btn-main-t {
-  font-size: 24px;
+  font-size: 22px;
 }
 </style>

@@ -1,7 +1,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <!--
-  化学工具箱 · 合成查询页（336×480，闪念小抄风格）
+  化学工具箱 · 合成查询页（336×480，设计系统 V2）
   逆推查询：输入产物（水 / H2O），列出所有能合成它的反应；
   再空格加一种已知反应物（水 氢气），即可求出还缺的反应物。
   输入卡与「逆推」按钮位于键盘遮挡区之上；结果区全部 absolute 顶层挂载。
@@ -9,8 +9,8 @@
 <template>
   <div class="page" @swipe="onSwipe">
 
-    <!-- 输入卡（小抄深色大圆角卡片） -->
-    <div class="input-card" @click="toggleKb">
+    <!-- 输入卡 -->
+    <div class="{{showKb ? 'input-card fld-on' : 'input-card'}}" @click="toggleKb">
       <text if="{{inputStr.length == 0}}" class="input-ph">输入产物，空格分隔：水 / 水 氢气</text>
       <div if="{{inputStr.length > 0}}" class="value-row">
         <text class="input-value">{{inputStr}}</text>
@@ -26,7 +26,7 @@
       <text class="btn-main-t">逆推</text>
     </div>
 
-    <!-- 结果区（小抄风格深色面板 + 结果卡片；全部 absolute 顶层挂载） -->
+    <!-- 结果区（深色面板 + 结果卡片；全部 absolute 顶层挂载） -->
     <div show="{{searched}}" class="panel-bg"></div>
     <text show="{{searched}}" class="panel-hd-t">合成路径</text>
     <text show="{{searched}}" class="panel-hd-n">{{synthResults.length}} 条</text>
@@ -46,7 +46,7 @@
     </list>
     <text if="{{!searched}}" class="panel-idle">如：水（查全部合成）或 水 氢气（求缺的反应物）</text>
 
-    <!-- 顶栏（闪念小抄同款） -->
+    <!-- 顶栏 -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
     <text static class="hd-sub">按产物逆推</text>
@@ -244,26 +244,30 @@ export default {
 /* ---- 输入卡（键盘遮挡区之上） ---- */
 .input-card {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 104px;
-  width: 324px;
-  height: 76px;
-  border-radius: 36px;
-  background-color: #262626;
+  width: 312px;
+  height: 72px;
+  border-radius: 30px;
+  background-color: #1c1c1e;
   padding: 10px 20px;
   justify-content: center;
+}
+.fld-on {
+  border: 2px solid #0a84ff;
+  padding: 8px 18px;
 }
 .input-ph {
   font-size: 22px;
   line-height: 28px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.34);
 }
 .value-row {
-  width: 284px;
+  width: 276px;
   flex-direction: row;
 }
 .input-value {
-  width: 266px;
+  width: 258px;
   font-size: 26px;
   line-height: 32px;
   color: #ffffff;
@@ -272,46 +276,38 @@ export default {
 }
 .input-caret {
   font-size: 26px;
-  color: #0d84ff;
+  color: #6db8ff;
 }
 
 /* ---- 操作行（bottom <= 252） ---- */
 .btn-clear {
   position: absolute;
-  left: 6px;
-  top: 188px;
-  width: 86px;
-  height: 56px;
-  border-radius: 28px;
+  left: 12px;
+  top: 192px;
+  width: 84px;
+  height: 52px;
 }
 .btn-search {
   position: absolute;
-  left: 100px;
-  top: 188px;
-  width: 230px;
-  height: 56px;
-  border-radius: 28px;
-}
-.btn-clear .btn-ghost-t {
-  font-size: 24px;
-}
-.btn-search .btn-main-t {
-  font-size: 26px;
+  left: 104px;
+  top: 192px;
+  width: 220px;
+  height: 52px;
 }
 
-/* ---- 结果区（小抄深色面板 + 结果卡片；absolute 顶层挂载） ---- */
+/* ---- 结果区（深色面板 + 结果卡片；absolute 顶层挂载） ---- */
 .panel-bg {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 258px;
-  width: 324px;
+  width: 312px;
   height: 216px;
-  border-radius: 36px;
-  background-color: #262626;
+  border-radius: 30px;
+  background-color: #1c1c1e;
 }
 .panel-hd-t {
   position: absolute;
-  left: 26px;
+  left: 30px;
   top: 266px;
   width: 180px;
   font-size: 24px;
@@ -321,28 +317,28 @@ export default {
 }
 .panel-hd-n {
   position: absolute;
-  left: 214px;
+  left: 216px;
   top: 268px;
-  width: 96px;
+  width: 84px;
   font-size: 20px;
   line-height: 26px;
   text-align: right;
-  color: #4da3ff;
+  color: #6db8ff;
 }
 .panel-none {
   position: absolute;
-  left: 26px;
+  left: 30px;
   top: 340px;
-  width: 284px;
+  width: 276px;
   text-align: center;
   font-size: 20px;
   color: rgba(255, 255, 255, 0.4);
 }
 .eq-list {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 302px;
-  width: 324px;
+  width: 312px;
   height: 166px;
   padding: 0px 12px;
 }
@@ -351,8 +347,8 @@ export default {
   height: 62px;
   padding: 6px 16px;
   margin-bottom: 7px;
-  border-radius: 24px;
-  background-color: #333333;
+  border-radius: 22px;
+  background-color: #26262a;
 }
 .eq-content {
   width: 100%;
@@ -372,7 +368,7 @@ export default {
 .eq-item-type {
   font-size: 16px;
   line-height: 20px;
-  color: #4da3ff;
+  color: #6db8ff;
   margin-top: 1px;
   lines: 1;
   text-overflow: ellipsis;

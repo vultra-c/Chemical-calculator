@@ -82,8 +82,5 @@ export default {
 <style>
 @import '../../common/style.css';
 
-/* 分类色条：计算=蓝 / 查询=青 / 工具=橙 */
-.tone-calc { background-color: #0d6eff; }
-.tone-info { background-color: #34c759; }
-.tone-tool { background-color: #ffb020; }
+/* 分类色条颜色定义在公共 style.css（tone-calc / tone-info / tone-tool） */
 </style>

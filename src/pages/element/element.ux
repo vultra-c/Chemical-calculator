@@ -1,17 +1,16 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <!--
-  化学工具箱 · 元素查询页（336×480，闪念小抄风格）
-  输入一个或多个元素（Fe O / 铁 氧 / 氧气 铁），
-  本地检索同时含这些元素的方程式；支持中文名与英文符号混输。
+  化学工具箱 · 元素查询页（336×480，设计系统 V2）
+  输入一个或多个元素（Fe O / 铁 氧 / 氧气 铁），本地检索同时含这些元素的方程式。
   输入卡与「查询方程」按钮位于键盘遮挡区之上；结果区全部 absolute 顶层挂载。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
 
-    <!-- 输入卡（小抄深色大圆角卡片） -->
-    <div class="input-card" @click="toggleKb">
-      <text if="{{inputStr.length == 0}}" class="input-ph">输入元素或名称，空格分隔：Fe O / 铁 氧</text>
+    <!-- 输入卡 -->
+    <div class="{{showKb ? 'input-card fld-on' : 'input-card'}}" @click="toggleKb">
+      <text if="{{inputStr.length == 0}}" class="input-ph">输入元素或名称，空格分隔</text>
       <div if="{{inputStr.length > 0}}" class="value-row">
         <text class="input-value">{{inputStr}}</text>
         <text if="{{showKb}}" class="input-caret">_</text>
@@ -26,7 +25,7 @@
       <text class="btn-main-t">查询方程</text>
     </div>
 
-    <!-- 结果区（小抄风格深色面板 + 80px 结果卡片；全部 absolute 顶层挂载） -->
+    <!-- 结果区（深色面板 + 结果卡片；全部 absolute 顶层挂载） -->
     <div show="{{searched}}" class="panel-bg"></div>
     <text show="{{searched}}" class="panel-hd-t">匹配方程式</text>
     <text show="{{searched}}" class="panel-hd-n">{{elementResults.length}} 条</text>
@@ -46,7 +45,7 @@
     </list>
     <text if="{{!searched}}" class="panel-idle">点击输入框输入，如：Fe O 或 铁 氧</text>
 
-    <!-- 顶栏（闪念小抄同款） -->
+    <!-- 顶栏 -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
     <text static class="hd-sub">按元素检索</text>
@@ -171,8 +170,7 @@ export default {
     } catch (err) {
       hits = []
     }
-    // 懒文本：仅首屏 RES_CHUNK 条立即解析成展示文本；
-    // 其余行先占位，滚动追加时再解析，搜索按钮点击链路不再被几十次化学式解析占住。
+    // 懒文本：仅首屏 RES_CHUNK 条立即解析成展示文本；其余滚动追加时再解析
     const rows = []
     for (let i = 0; i < hits.length; i++) {
       rows.push({ text: '', type: hits[i].t, entry: hits[i], tall: false, rid: 'e' + i })
@@ -217,26 +215,30 @@ export default {
 /* ---- 输入卡（键盘遮挡区之上） ---- */
 .input-card {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 104px;
-  width: 324px;
-  height: 76px;
-  border-radius: 36px;
-  background-color: #262626;
+  width: 312px;
+  height: 72px;
+  border-radius: 30px;
+  background-color: #1c1c1e;
   padding: 10px 20px;
   justify-content: center;
+}
+.fld-on {
+  border: 2px solid #0a84ff;
+  padding: 8px 18px;
 }
 .input-ph {
   font-size: 22px;
   line-height: 28px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.34);
 }
 .value-row {
-  width: 284px;
+  width: 276px;
   flex-direction: row;
 }
 .input-value {
-  width: 266px;
+  width: 258px;
   font-size: 26px;
   line-height: 32px;
   color: #ffffff;
@@ -245,46 +247,38 @@ export default {
 }
 .input-caret {
   font-size: 26px;
-  color: #0d84ff;
+  color: #6db8ff;
 }
 
 /* ---- 操作行（bottom <= 252） ---- */
 .btn-clear {
   position: absolute;
-  left: 6px;
-  top: 188px;
-  width: 86px;
-  height: 56px;
-  border-radius: 28px;
+  left: 12px;
+  top: 192px;
+  width: 84px;
+  height: 52px;
 }
 .btn-search {
   position: absolute;
-  left: 100px;
-  top: 188px;
-  width: 230px;
-  height: 56px;
-  border-radius: 28px;
-}
-.btn-clear .btn-ghost-t {
-  font-size: 24px;
-}
-.btn-search .btn-main-t {
-  font-size: 26px;
+  left: 104px;
+  top: 192px;
+  width: 220px;
+  height: 52px;
 }
 
-/* ---- 结果区（小抄深色面板 + 结果卡片；absolute 顶层挂载，list 不参与 flex 测量） ---- */
+/* ---- 结果区（深色面板 + 结果卡片；absolute 顶层挂载，list 不参与 flex 测量） ---- */
 .panel-bg {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 258px;
-  width: 324px;
+  width: 312px;
   height: 216px;
-  border-radius: 36px;
-  background-color: #262626;
+  border-radius: 30px;
+  background-color: #1c1c1e;
 }
 .panel-hd-t {
   position: absolute;
-  left: 26px;
+  left: 30px;
   top: 266px;
   width: 180px;
   font-size: 24px;
@@ -294,39 +288,39 @@ export default {
 }
 .panel-hd-n {
   position: absolute;
-  left: 214px;
+  left: 216px;
   top: 268px;
-  width: 96px;
+  width: 84px;
   font-size: 20px;
   line-height: 26px;
   text-align: right;
-  color: #4da3ff;
+  color: #6db8ff;
 }
 .panel-none {
   position: absolute;
-  left: 26px;
+  left: 30px;
   top: 340px;
-  width: 284px;
+  width: 276px;
   text-align: center;
   font-size: 20px;
   color: rgba(255, 255, 255, 0.4);
 }
 .eq-list {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 302px;
-  width: 324px;
+  width: 312px;
   height: 166px;
   padding: 0px 12px;
 }
-/* list-item：小抄搜索结果风（80px 卡片）；静态 class + 显式行高，内容 div 包裹 */
+/* list-item：结果卡（62px 基础 / 76px 长方程两行）；静态 class + 显式行高 */
 .eq-item {
   width: 100%;
   height: 62px;
   padding: 6px 16px;
   margin-bottom: 7px;
-  border-radius: 24px;
-  background-color: #333333;
+  border-radius: 22px;
+  background-color: #26262a;
 }
 .eq-content {
   width: 100%;
@@ -346,7 +340,7 @@ export default {
 .eq-item-type {
   font-size: 16px;
   line-height: 20px;
-  color: #4da3ff;
+  color: #6db8ff;
   margin-top: 1px;
   lines: 1;
   text-overflow: ellipsis;

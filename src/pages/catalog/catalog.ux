@@ -117,7 +117,7 @@ export default {
   top: 0px;
   width: 336px;
   height: 480px;
-  padding: 102px 6px 8px;
+  padding: 102px 12px 10px;
 }
 
 
@@ -125,26 +125,26 @@ export default {
 .cat-title-item {
   width: 100%;
   height: 40px;
-  padding: 0 22px;
+  padding: 0 20px;
   margin-bottom: 4px;
   justify-content: center;
 }
 .cat-title {
   font-size: 22px;
   font-weight: bold;
-  color: #4da3ff;
+  color: #6db8ff;
   lines: 1;
   text-overflow: ellipsis;
 }
 
-/* list-item：小抄深色卡片风；静态 class + 显式行高/间距，内容内层 div 包裹 */
+/* list-item：深色卡片；静态 class + 显式行高/间距，内容内层 div 包裹 */
 .cat-item {
   width: 100%;
   height: 72px;
   padding: 0 22px;
   margin-bottom: 8px;
-  border-radius: 30px;
-  background-color: #262626;
+  border-radius: 26px;
+  background-color: #1c1c1e;
 }
 .cat-content {
   width: 100%;

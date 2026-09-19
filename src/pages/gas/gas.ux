@@ -1,38 +1,36 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <!--
-  化学工具箱 · 气体标况换算页（336×480，闪念小抄风格）
-  标准状况（0 ℃、101 kPa）V_m = 22.4 L/mol：
-    体积 → 物质的量 → 质量 → 分子个数
-    质量 → 物质的量 → 标准状况体积 → 分子个数
-  两个输入框（化学式 / 数值）+ 模式切换，均在键盘遮挡区之上（<=252px）。
+  化学工具箱 · 气体标况换算页（336×480，设计系统 V2）
+  标准状况（0 ℃、101 kPa）V_m = 22.4 L/mol：体积 ↔ 质量 ↔ 物质的量 ↔ 分子个数。
+  模式切换 chip + 两个输入框，均在键盘遮挡区之上（<=252px）。
 -->
 <template>
   <div class="page" @swipe="onSwipe">
 
     <!-- 模式与计算（同行 scroll-x，键盘弹出时也可点） -->
     <scroll class="mode-scroll" scroll-x="{{true}}">
-      <div class="mode-row">
-        <div class="{{dir === 'v' ? 'mode-chip-on' : 'mode-chip'}}" @click="setDir('v')">
-          <text class="{{dir === 'v' ? 'mode-t-on' : 'mode-t'}}">体积 → 质量</text>
+      <div class="ex-row">
+        <div class="{{dir === 'v' ? 'chip chip-on' : 'chip'}}" @click="setDir('v')">
+          <text class="{{dir === 'v' ? 'chip-t chip-t-on' : 'chip-t'}}">体积 → 质量</text>
         </div>
-        <div class="{{dir === 'm' ? 'mode-chip-on' : 'mode-chip'}}" @click="setDir('m')">
-          <text class="{{dir === 'm' ? 'mode-t-on' : 'mode-t'}}">质量 → 体积</text>
+        <div class="{{dir === 'm' ? 'chip chip-on' : 'chip'}}" @click="setDir('m')">
+          <text class="{{dir === 'm' ? 'chip-t chip-t-on' : 'chip-t'}}">质量 → 体积</text>
         </div>
-        <div class="go-chip" @click="onCalc">
-          <text class="go-t">计算</text>
+        <div class="chip chip-on" @click="onCalc">
+          <text class="chip-t chip-t-on">计算</text>
         </div>
       </div>
     </scroll>
 
     <!-- 输入框 1：化学式（bottom 202） -->
-    <div class="{{activeIdx === 0 ? 'fld-on' : 'fld'}}" style="top:156px;" @click="pick(0)">
+    <div class="{{activeIdx === 0 ? 'fld fld-on' : 'fld'}}" style="top:154px;" @click="pick(0)">
       <text class="fld-l">化学式</text>
       <text class="fld-v">{{formula === '' ? '点此输入' : formula}}</text>
     </div>
 
     <!-- 输入框 2：数值（bottom 252） -->
-    <div class="{{activeIdx === 1 ? 'fld-on' : 'fld'}}" style="top:206px;" @click="pick(1)">
+    <div class="{{activeIdx === 1 ? 'fld fld-on' : 'fld'}}" style="top:206px;" @click="pick(1)">
       <text class="fld-l">{{numLabel}}</text>
       <text class="fld-v">{{numStr === '' ? '点此输入' : numStr}}</text>
     </div>
@@ -48,7 +46,7 @@
       </list-item>
     </list>
 
-    <!-- 顶栏（闪念小抄同款） -->
+    <!-- 顶栏 -->
     <img static src="/common/images/hd.png" class="hd-bg" />
     <img static src="/common/images/back.png" class="hd-back" @click="goBack" />
     <text static class="hd-sub">V_m = 22.4 L/mol</text>
@@ -194,88 +192,35 @@ export default {
 /* ---- 模式行 + 计算（键盘弹出时也可点：bottom 150） ---- */
 .mode-scroll {
   position: absolute;
-  left: 6px;
-  top: 106px;
-  width: 324px;
+  left: 12px;
+  top: 108px;
+  width: 312px;
   height: 44px;
 }
-.mode-row {
+.ex-row {
   flex-direction: row;
 }
-.mode-chip {
-  height: 42px;
-  border-radius: 21px;
-  background-color: #262626;
-  padding: 0 18px;
-  margin-right: 8px;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-}
-.mode-chip-on {
-  height: 42px;
-  border-radius: 21px;
-  background-color: #0d6eff;
-  padding: 0 18px;
-  margin-right: 8px;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-}
-.mode-t {
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.72);
-}
-.mode-t-on {
-  font-size: 20px;
-  font-weight: bold;
-  color: #ffffff;
-}
-.go-chip {
-  height: 42px;
-  border-radius: 21px;
-  background-color: #0d6eff;
-  padding: 0 26px;
-  margin-right: 8px;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-}
-.go-t {
-  font-size: 20px;
-  font-weight: bold;
-  color: #ffffff;
-}
 
-/* ---- 两个输入框 ---- */
+/* ---- 两个输入框（统一 52px 高、聚焦描边） ---- */
 .fld {
   position: absolute;
-  left: 6px;
-  width: 324px;
-  height: 46px;
-  border-radius: 23px;
-  background-color: #262626;
+  left: 12px;
+  width: 312px;
+  height: 52px;
+  border-radius: 26px;
+  background-color: #1c1c1e;
   padding: 0 20px;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
 }
 .fld-on {
-  position: absolute;
-  left: 6px;
-  width: 324px;
-  height: 46px;
-  border-radius: 23px;
-  background-color: #262626;
-  border: 2px solid #0d6eff;
+  border: 2px solid #0a84ff;
   padding: 0 18px;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
 }
 .fld-l {
   font-size: 19px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.42);
 }
 .fld-v {
   font-size: 22px;
@@ -287,28 +232,28 @@ export default {
 
 .hint-tip {
   position: absolute;
-  left: 16px;
-  top: 268px;
-  width: 304px;
-  font-size: 19px;
-  line-height: 26px;
-  color: rgba(255, 255, 255, 0.3);
+  left: 18px;
+  top: 274px;
+  width: 300px;
+  font-size: 18px;
+  line-height: 24px;
+  color: rgba(255, 255, 255, 0.26);
   text-align: center;
 }
 
 /* ---- 结果 ---- */
 .res-list {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 258px;
-  width: 324px;
+  width: 312px;
   height: 214px;
 }
 .res-head {
   width: 100%;
   height: 76px;
   border-radius: 26px;
-  background-color: #262626;
+  background-color: rgba(10, 132, 255, 0.16);
   padding: 10px 18px;
   margin-bottom: 8px;
 }
@@ -335,7 +280,7 @@ export default {
 }
 .head-sub {
   font-size: 17px;
-  color: #4da3ff;
+  color: #6db8ff;
   margin-top: 2px;
 }
 .res-main {
@@ -347,7 +292,7 @@ export default {
 .res-sub {
   font-size: 16px;
   line-height: 20px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.42);
   margin-top: 2px;
 }
 </style>

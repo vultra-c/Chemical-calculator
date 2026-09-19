@@ -10,7 +10,7 @@
       <img static src="/common/images/icon.png" class="app-icon" />
       <div class="app-info">
         <text class="app-name">化学工具箱</text>
-        <text class="app-ver">V26.9.55.CALC（2609550）</text>
+        <text class="app-ver">V26.9.60.CALC（2609600）</text>
       </div>
     </div>
 
@@ -20,7 +20,7 @@
       <text class="info-line">包名　com.whyy.chemcalc</text>
       <text class="info-line">运行　纯离线，计算与数据库全部内置</text>
       <text class="info-line">引擎　化合 · 分解 · 置换 · 复分解 · 氧化还原</text>
-      <text class="info-line">数据　118 元素 · 252 反应 · 人教九年级全适配</text>
+      <text class="info-line">数据　118 元素 · 273 反应 · 人教九年级全适配</text>
       <text class="info-line">存储　仅保存设置项（小数位 · 常亮 · 振动）</text>
     </div>
 
@@ -54,12 +54,12 @@ export default {
 /* ---- 应用信息卡 ---- */
 .app-card {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 110px;
-  width: 324px;
+  width: 312px;
   height: 112px;
-  border-radius: 36px;
-  background-color: #262626;
+  border-radius: 30px;
+  background-color: #1c1c1e;
   padding: 0 22px;
   flex-direction: row;
   align-items: center;
@@ -88,21 +88,21 @@ export default {
 /* ---- 数据说明卡 ---- */
 .sec-label {
   position: absolute;
-  left: 16px;
+  left: 18px;
   top: 234px;
-  width: 304px;
+  width: 300px;
   font-size: 20px;
   line-height: 24px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
 }
 .info-card {
   position: absolute;
-  left: 6px;
+  left: 12px;
   top: 264px;
-  width: 324px;
+  width: 312px;
   height: 176px;
-  border-radius: 36px;
-  background-color: #262626;
+  border-radius: 30px;
+  background-color: #1c1c1e;
   padding: 10px 22px;
   flex-direction: column;
   justify-content: center;
