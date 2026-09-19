@@ -1,6 +1,7 @@
 /* 化学工具箱 · 公共基础（闪念小抄 UI 风格）
    色板/卡片/顶栏与考点阅读器（闪念小抄）完全一致：
-   纯黑背景 / #262626 大圆角卡片(36px) / 粗体白标题 + 灰副标题 / #0D6EFF 强调。 */
+   纯黑背景 / #262626 大圆角卡片(36px) / 粗体白标题 + 灰副标题 / #0D6EFF 强调。
+   层级补充：1c1c1e 次级卡 / 0d6eff 强调蓝 / 4da3ff 强调文字 / 34c759 绿(成功·气体) / ffb020 橙(警示·条件)。 */
 
 /* 页面基础 */
 .page {
@@ -146,4 +147,31 @@
 .center {
   justify-content: center;
   align-items: center;
+}
+
+/* ---- 选中态 chip（高亮胶囊：蓝底白字，用于模式切换/激活筛选） ---- */
+.chip-on {
+  background-color: #0d6eff;
+}
+.chip-on-t {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* ---- 区块标签（卡片列表上方的小节标题） ---- */
+.sec-tag {
+  position: absolute;
+  left: 16px;
+  width: 304px;
+  font-size: 20px;
+  line-height: 24px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ---- 卡片左侧强调条（分类色点容器：与 item-content 并排的 4px 竖条） ---- */
+.item-bar {
+  width: 8px;
+  height: 56px;
+  border-radius: 4px;
+  margin-right: 16px;
 }
